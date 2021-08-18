@@ -34,6 +34,7 @@ public:
   sf::View view;
 };
 
+
 class Scenery : public PDObject{
 public:
   Scenery();

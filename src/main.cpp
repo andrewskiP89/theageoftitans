@@ -1,8 +1,9 @@
-// testing sfml project
+ // testing sfml project
 #include "../headers/MenuManager.h"
 #include "../headers/sfml.h"
 #include "../headers/WindowManager.h"
 #include "../headers/EventManager.h"
+#include "../headers/MapManager.h"
 
 #include <iostream>
 // MAIN APP CONFIGS
@@ -16,6 +17,11 @@
 #define LINK_ASSET "./assets/imgs/link_new.png"
 
 #define MAP_ASSET "./assets/imgs/worldmap.png"
+
+#define TILE_SET "./assets/imgs/titanstileset.png"
+#define LAYER_1 "./assets/levelmap/titans_level1_layer1.csv"
+#define LAYER_2 "./assets/levelmap/titans_level1_layer2.csv"
+
 // managing general font
 sf::Font app_font;
 
@@ -177,7 +183,7 @@ void Player::update(float deltas){
   animation.getCurrentFrame(deltas, sprite);
   //std::cout << "Printing deltas " << deltas << "\n";
   sprite.move(speed.x * deltas, speed.y * deltas);
-  std::cout << "Printing speed x " << speed.x << "\t y " << speed.y << "\n";
+  //std::cout << "Printing speed x " << speed.x << "\t y " << speed.y << "\n";
 }
 
 void Player::draw(sf::RenderWindow * window){
@@ -314,6 +320,10 @@ bool WindowManager::init(){
   for(auto item : menu->getClickables()){
     eventMgr->registerItem(item);
   }
+  gameMap.load(TILE_SET, sf::Vector2u(16, 16));
+  gameMap.addLayer(LAYER_1, 50, 50);
+  gameMap.addLayer(LAYER_2, 50, 50);
+
 
   //add player here
   Player * link = new Player();
@@ -344,8 +354,14 @@ void WindowManager::draw(){
     //bGround.setOutlineColor(sf::Color::Blue);
     //_window->draw(bGround);
     _window->setView(camera.view);
-    if(scenary != nullptr){
+    /*if(scenary != nullptr){
+
       _window->draw(scenary->map);
+    }*/
+
+    std::vector<MapLayer*> levelLayers = gameMap.m_layers;
+    if(levelLayers.size() > 0){
+      _window->draw(*levelLayers[0]);
     }
     for(int i = 0; i < _windowItems.size(); i ++){
       _windowItems[i] -> draw(_window);
@@ -353,7 +369,11 @@ void WindowManager::draw(){
     for(int i = 0; i < _itemsToDisplay.size(); i ++){
       _itemsToDisplay[i] -> draw(_window);
     }
-
+    if(levelLayers.size() > 1){
+      for(int i = 1; i < levelLayers.size(); i ++){
+        _window->draw(*levelLayers[i]);
+      }
+    }
 
     _window->display();
 }
@@ -511,7 +531,6 @@ int main(int argc, char const *argv[]) {
   //wManager->getWindow()->setFramerateLimit(60);
   while (wManager->getWindow()->isOpen())
   {
-
       sf::Event event;
       while (wManager->getWindow()->pollEvent(event))
       {
@@ -523,7 +542,6 @@ int main(int argc, char const *argv[]) {
       wManager->update();
 
       wManager->draw();
-
 
       wManager->clock.restart();
   }

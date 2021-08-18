@@ -1,6 +1,7 @@
 #include "sfml.h"
 #include "Object.h"
 #include "EventManager.h"
+#include "MapManager.h"
 
 #ifndef WINDOW_MANAGER_H
 #define WINDOW_MANAGER_H
@@ -21,6 +22,7 @@ public:
   static WindowManager * getManager();
   EventManager * eventMgr;
   WindowManager ();
+  LevelMap gameMap;
   void notifyObjects(sf::Event);
   bool init();
   void clearItems();
