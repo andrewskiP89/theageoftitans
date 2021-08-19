@@ -13,7 +13,7 @@
 #define MENU_FONT_SIZE 25
 
 #define SRC_FLDR "./assets/fonts/dos_font.ttf"
-#define LINK_SPEED 5.0e5f
+#define LINK_SPEED 2.5e5f
 #define LINK_ASSET "./assets/imgs/link_new.png"
 
 #define MAP_ASSET "./assets/imgs/worldmap.png"
@@ -105,6 +105,7 @@ void Animation::loadAsset(std::string file_path, sf::Sprite &sprite, int wmax, i
 
   if(texture.loadFromFile(file_path)){
     sprite.setTexture(texture);
+    //sprite.setScale(0.25f, 0.25f);
     frameSize = frameSize;
     orientation = LEFT;
     currentFrame = 0;
@@ -169,7 +170,7 @@ void Animation::getCurrentFrame(float delta, sf::Sprite &sprite)
     currentFrame = ( currentFrame >= _wmax - 1 ) ? 0 : currentFrame + 1;
     //std::cout << "Updating currentFrame  " << _wmax - 1 << "\t" << currentFrame << "\n";
   }
-  sprite.setTextureRect(sf::IntRect(currentFrame * frameSize.x, (currentRow - 1) * frameSize.y , frameSize.x, frameSize.y));
+  sprite.setTextureRect(sf::IntRect(currentFrame * frameSize.x, (currentRow - 1) * frameSize.y, frameSize.x, frameSize.y));
 }
 
 Player::Player()
@@ -220,6 +221,7 @@ void Player::onEvent(sf::Event event){
   }
 }
 void Player::onCollision(){
+
   sprite.setPosition(m_oldPosition);
   m_position = m_oldPosition;
 }
@@ -399,12 +401,13 @@ void WindowManager::checkCollisions(){
   //
   int currentLayer = 1; // this info needs to be calculated dynamically
                         // based on player position
-
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
     sf::FloatRect itemArea = _itemsToDisplay[i] -> getBounds();
+    std::cout << "checking player area. Left " << itemArea.left << "\t top: " << itemArea.top << "\t width : " << itemArea.width << "\t height : " << itemArea.height << '\n';
     MapLayer *currentLevelLayer = gameMap.m_layers[currentLayer];
     for(auto item : currentLevelLayer->m_collidableItems){
       if(itemArea.intersects(*item)){
+        std::cout << "Player hit something. Left " << item -> left << "\t top: " << item-> top << "\t width : " << item->width << "\t height : " << item->height << '\n';
         _itemsToDisplay[i] -> onCollision();
       }
     }

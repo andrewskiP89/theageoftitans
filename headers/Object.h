@@ -76,7 +76,7 @@ class Player : public PDObject{
 public:
   Player();
   Animation animation;
-  sf::Sprite sprite;
+  //sf::Sprite sprite;
   void update(float deltas);
   void move(sf::Vector2f p);
   void draw(sf::RenderWindow * window);

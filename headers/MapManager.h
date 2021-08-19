@@ -20,8 +20,9 @@ public:
   void setTileset(sf::Texture * tileSet, sf::Vector2u tileSize){
     m_tileSize = tileSize;
     m_tileset = tileSet;
+
   }
-  void generateLayer(const std::string& mapFile, unsigned int width, unsigned int height){
+  void generateLayer(const std::string& mapFile, unsigned int width, unsigned int height, float mapScale){
 
     std::vector<int> collidableItemsInMap = {
       120, 121, 124, 125, 44, 45, 206, 207
@@ -61,8 +62,12 @@ public:
         quad[2].position = sf::Vector2f((j + 1) * m_tileSize.x, (i + 1) * m_tileSize.y);
         quad[3].position = sf::Vector2f(j * m_tileSize.x, (i + 1) * m_tileSize.y);
 
+        unsigned int tolerance = 50;
         if(isCollidable){
-          sf::FloatRect *r  = new sf::FloatRect(j * m_tileSize.x,  i * m_tileSize.y, m_tileSize.x, m_tileSize.y);
+          sf::FloatRect *r  = new sf::FloatRect(j * m_tileSize.x * mapScale + tolerance,
+                                                i * m_tileSize.y * mapScale + tolerance,
+                                                m_tileSize.x * mapScale - (2 * tolerance),
+                                                m_tileSize.y * mapScale - (2 * tolerance));
           m_collidableItems.push_back(r);
         }
         // define its 4 texture coordinates
@@ -101,18 +106,20 @@ public:
     if (!m_tileset.loadFromFile(tileSet))
             return false;
     m_tileSize = tileSize;
+    m_scaleFactor =  5.0f;
     return true;
   }
   void addLayer(const std::string& mapFile, unsigned int width, unsigned int height){
     MapLayer *ml = new MapLayer();
-    float scaleFactor = 5.0f;
-    ml->scale(scaleFactor, scaleFactor);
+    //float scaleFactor = 5.0f;
+    ml->scale(m_scaleFactor, m_scaleFactor);
     ml->setTileset(&m_tileset, m_tileSize);
-    ml->generateLayer(mapFile, width, height);
+    ml->generateLayer(mapFile, width, height, m_scaleFactor);
     m_layers.push_back(ml);
   }
   std::vector<MapLayer*> m_layers;
 private:
+  float m_scaleFactor;
   sf::Vector2u m_tileSize;
   sf::Texture m_tileset;
 };
