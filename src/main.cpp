@@ -7,9 +7,9 @@
 
 #include <iostream>
 // MAIN APP CONFIGS
-#define PB_DASHBOARD_TITLE "The Legend of Zedda"
-#define DEFAULT_WIDTH 1000
-#define DEFAULT_HEIGHT 800
+#define PB_DASHBOARD_TITLE "The age of Titans"
+#define DEFAULT_WIDTH 1600
+#define DEFAULT_HEIGHT 900
 #define MENU_FONT_SIZE 25
 
 #define SRC_FLDR "./assets/fonts/dos_font.ttf"
@@ -182,7 +182,9 @@ void Player::update(float deltas){
   animation.update(pState);
   animation.getCurrentFrame(deltas, sprite);
   //std::cout << "Printing deltas " << deltas << "\n";
+  m_oldPosition = sprite.getPosition();
   sprite.move(speed.x * deltas, speed.y * deltas);
+  m_position = sprite.getPosition();
   //std::cout << "Printing speed x " << speed.x << "\t y " << speed.y << "\n";
 }
 
@@ -217,7 +219,10 @@ void Player::onEvent(sf::Event event){
     speed.y = 0;
   }
 }
-
+void Player::onCollision(){
+  sprite.setPosition(m_oldPosition);
+  m_position = m_oldPosition;
+}
 sf::Vector2f Player::getPosition(){
   return sprite.getPosition();
 }
@@ -291,6 +296,7 @@ WindowManager * WindowManager::getManager(){
 void PDObject::draw(sf::RenderWindow *window){}
 void PDObject::update(float deltas){}
 void PDObject::onEvent(sf::Event event){}
+void PDObject::onCollision(){}
 sf::Vector2f  PDObject::getPosition(){ return sf::Vector2f(0.0f, 0.0f);}
 
 bool WindowManager::init(){
@@ -387,6 +393,22 @@ void WindowManager::update(){
     _itemsToDisplay[i] -> update(deltas);
   }
   camera.updateCamera(sf::FloatRect(0, 0, scenary->mapSize.x, scenary->mapSize.y));
+}
+
+void WindowManager::checkCollisions(){
+  //
+  int currentLayer = 1; // this info needs to be calculated dynamically
+                        // based on player position
+
+  for(int i = 0; i < _itemsToDisplay.size(); i ++){
+    sf::FloatRect itemArea = _itemsToDisplay[i] -> getBounds();
+    MapLayer *currentLevelLayer = gameMap.m_layers[currentLayer];
+    for(auto item : currentLevelLayer->m_collidableItems){
+      if(itemArea.intersects(*item)){
+        _itemsToDisplay[i] -> onCollision();
+      }
+    }
+  }
 }
 
 void WindowManager::notifyObjects(sf::Event event){
@@ -540,7 +562,7 @@ int main(int argc, char const *argv[]) {
               wManager->getWindow()->close();
       }
       wManager->update();
-
+      wManager->checkCollisions();
       wManager->draw();
 
       wManager->clock.restart();

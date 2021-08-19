@@ -23,7 +23,8 @@ public:
   EventManager * eventMgr;
   WindowManager ();
   LevelMap gameMap;
-  void notifyObjects(sf::Event);
+  void checkCollisions();
+  void notifyObjects(sf::Event event);
   bool init();
   void clearItems();
   void addDrawable(PDObject* obj);

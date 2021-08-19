@@ -16,9 +16,14 @@ enum HOrientation{
 };
 class PDObject{
 public:
+  sf::Sprite sprite;
   virtual void draw(sf::RenderWindow * window);
   virtual void update(float deltas);
   virtual void onEvent(sf::Event event);
+  virtual void onCollision();
+  sf::FloatRect getBounds(){
+    return sprite.getGlobalBounds();
+  }
   virtual sf::Vector2f getPosition();
 };
 
@@ -76,11 +81,13 @@ public:
   void move(sf::Vector2f p);
   void draw(sf::RenderWindow * window);
   void onEvent(sf::Event event);
+  void onCollision();
   sf::Vector2f getPosition();
 private:
   P_State pState;
   sf::Vector2f speed;
-  sf::Vector2f position;
+  sf::Vector2f m_position;
+  sf::Vector2f m_oldPosition;
 };
 
 #endif
