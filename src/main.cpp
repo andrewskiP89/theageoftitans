@@ -303,7 +303,11 @@ sf::Vector2f  PDObject::getPosition(){ return sf::Vector2f(0.0f, 0.0f);}
 
 bool WindowManager::init(){
   // initing the menu
+  m_gameState = GameState::OnDialog; // default will be set to Starting at one point
+
   load_assets();
+
+  m_textContainer.init(sf::Vector2f(0.0f, DEFAULT_HEIGHT * 0.8f), DEFAULT_WIDTH, DEFAULT_HEIGHT * 0.2f);
 
   eventMgr = new EventManager();
   MenuContainer *menu = new MenuContainer();
@@ -332,7 +336,6 @@ bool WindowManager::init(){
   gameMap.addLayer(LAYER_1, 50, 50);
   gameMap.addLayer(LAYER_2, 50, 50);
 
-
   //add player here
   Player * link = new Player();
   link->animation.loadAsset(LINK_ASSET, link->sprite, 10, 8);
@@ -354,35 +357,40 @@ WindowManager::~WindowManager(){}
 sf::RenderWindow* WindowManager::getWindow(){
   return _window;
 }
+void WindowManager::manageEvents(){
+  sf::Event event;
+  while (getWindow()->pollEvent(event))
+  {
+      eventMgr->notifyAll(event);
+      notifyObjects(event);
+      if (event.type == sf::Event::Closed)
+          getWindow()->close();
+  }
+}
 
 void WindowManager::draw(){
     _window->clear();
-    //sf::RectangleShape bGround(sf::Vector2f(DEFAULT_WIDTH, DEFAULT_HEIGHT));
-    //bGround.setFillColor(sf::Color::Blue);
-    //bGround.setOutlineColor(sf::Color::Blue);
-    //_window->draw(bGround);
-    _window->setView(camera.view);
-    /*if(scenary != nullptr){
 
-      _window->draw(scenary->map);
-    }*/
+    _window->setView(camera.view);
 
     std::vector<MapLayer*> levelLayers = gameMap.m_layers;
     if(levelLayers.size() > 0){
       _window->draw(*levelLayers[0]);
     }
     for(int i = 0; i < _windowItems.size(); i ++){
-      _windowItems[i] -> draw(_window);
+      _windowItems[i]->draw(_window);
     }
     for(int i = 0; i < _itemsToDisplay.size(); i ++){
-      _itemsToDisplay[i] -> draw(_window);
+      _itemsToDisplay[i]->draw(_window);
     }
     if(levelLayers.size() > 1){
       for(int i = 1; i < levelLayers.size(); i ++){
         _window->draw(*levelLayers[i]);
       }
     }
-
+    if(m_gameState == GameState::OnDialog){
+      m_textContainer.draw(_window);
+    }
     _window->display();
 }
 void WindowManager::setScenery(Scenery * sc){
@@ -391,24 +399,26 @@ void WindowManager::setScenery(Scenery * sc){
 void WindowManager::update(){
   float deltas = clock.getElapsedTime().asSeconds();
   //std::cout << "Printing frame rate " << 1 / deltas << " \n";
+
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
-    _itemsToDisplay[i] -> update(deltas);
+    _itemsToDisplay[i]->update(deltas);
   }
   camera.updateCamera(sf::FloatRect(0, 0, scenary->mapSize.x, scenary->mapSize.y));
+  if(m_gameState == GameState::OnDialog){
+    m_textContainer.update(deltas);
+  }
+
 }
 
 void WindowManager::checkCollisions(){
-  //
   int currentLayer = 1; // this info needs to be calculated dynamically
                         // based on player position
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
     sf::FloatRect itemArea = _itemsToDisplay[i] -> getBounds();
-    std::cout << "checking player area. Left " << itemArea.left << "\t top: " << itemArea.top << "\t width : " << itemArea.width << "\t height : " << itemArea.height << '\n';
     MapLayer *currentLevelLayer = gameMap.m_layers[currentLayer];
     for(auto item : currentLevelLayer->m_collidableItems){
       if(itemArea.intersects(*item)){
-        std::cout << "Player hit something. Left " << item -> left << "\t top: " << item-> top << "\t width : " << item->width << "\t height : " << item->height << '\n';
-        _itemsToDisplay[i] -> onCollision();
+        _itemsToDisplay[i]->onCollision();
       }
     }
   }
@@ -500,6 +510,7 @@ MenuItem::MenuItem(const std::string menuText, bool isRoot){
   _menuText = menuText;
   _isRoot = isRoot;
   _atype = ActionType::execute;
+
 }
 
 void MenuItem::setPosition(float x, float y){
@@ -548,28 +559,26 @@ int main(int argc, char const *argv[]) {
   if(!wManager->init())
     return EXIT_FAILURE;
 
-  Scenery scene;
-  scene.loadMapFromFile(MAP_ASSET);
-  wManager->setScenery(&scene);
+  try{
+    Scenery scene;
+    scene.loadMapFromFile(MAP_ASSET);
+    wManager->setScenery(&scene);
 
-  wManager->getWindow()->setVerticalSyncEnabled(true);
-  //wManager->getWindow()->setFramerateLimit(60);
-  while (wManager->getWindow()->isOpen())
-  {
-      sf::Event event;
-      while (wManager->getWindow()->pollEvent(event))
-      {
-          wManager->eventMgr->notifyAll(event);
-          wManager->notifyObjects(event);
-          if (event.type == sf::Event::Closed)
-              wManager->getWindow()->close();
-      }
-      wManager->update();
-      wManager->checkCollisions();
-      wManager->draw();
+    wManager->getWindow()->setVerticalSyncEnabled(true);
+    //wManager->getWindow()->setFramerateLimit(60);
+    while (wManager->getWindow()->isOpen())
+    {
+        wManager->manageEvents();
+        wManager->update();
+        wManager->checkCollisions();
+        wManager->draw();
 
-      wManager->clock.restart();
+        wManager->clock.restart();
+    }
+  }catch(const std::exception& exc){
+    std::cout << "Something went wrong " << exc.what();
   }
+
   std::cout << "Exiting .. \n";
   return 0;
 }

@@ -6,6 +6,12 @@
 #ifndef WINDOW_MANAGER_H
 #define WINDOW_MANAGER_H
 
+enum GameState { Starting,
+                  Playing,
+                  Pause,
+                  OnMenu,
+                  OnDialog
+                  };
 class WindowManager {
 
 private:
@@ -17,12 +23,15 @@ private:
   Camera camera;
 
 public:
+  GameState m_gameState;
+  TextContainer m_textContainer;
   void setScenery(Scenery *sc);
   sf::Clock clock;
   static WindowManager * getManager();
   EventManager * eventMgr;
   WindowManager ();
   LevelMap gameMap;
+  void manageEvents();
   void checkCollisions();
   void notifyObjects(sf::Event event);
   bool init();
