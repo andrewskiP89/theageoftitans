@@ -35,6 +35,7 @@ public:
     std::string line;
     std::ifstream mFile(mapFile);
     unsigned int i = 0;
+
     while (std::getline(mFile, line)) {
       std::vector<std::string> rowItems;
       boost::algorithm::split(rowItems, line, boost::is_any_of(","));
@@ -42,7 +43,10 @@ public:
         bool isCollidable = false;
         std::string itemString = rowItems[j];
         int tileNumber = std::stoi(itemString);
-        if(tileNumber == -1) continue;
+          
+        if(tileNumber == -1)
+          continue;
+
         if (std::find(collidableItemsInMap.begin(), collidableItemsInMap.end(), tileNumber) != collidableItemsInMap.end()) {
           isCollidable = true;
         }
@@ -50,12 +54,6 @@ public:
         int tv = tileNumber / (m_tileset->getSize().x / m_tileSize.x);
 
         sf::Vertex* quad = &m_vertices[(i + j * width) * scaleFactor];
-
-        // define its 4 corners
-        /*quad[0].position = sf::Vector2f(i * m_tileSize.x , j * m_tileSize.y);
-        quad[1].position = sf::Vector2f((i + 1) * m_tileSize.x, j * m_tileSize.y);
-        quad[2].position = sf::Vector2f((i + 1) * m_tileSize.x, (j + 1) * m_tileSize.y);
-        quad[3].position = sf::Vector2f(i * m_tileSize.x, (j + 1) * m_tileSize.y);*/
 
         quad[0].position = sf::Vector2f(j * m_tileSize.x , i * m_tileSize.y);
         quad[1].position = sf::Vector2f((j + 1) * m_tileSize.x, i * m_tileSize.y);

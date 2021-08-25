@@ -56,26 +56,29 @@ bool Scenery::loadMapFromFile(std::string mapSrc){
   return false;
 }
 
-
 ///////////// CAMERA ////////////
 Camera::Camera(){
 
 }
+
 void Camera::setTarget(PDObject *trgt){
   target = trgt;
   updateCamera(horizon);
 }
+
 void Camera::initCamera(sf::Vector2u size, sf::FloatRect horizon){
   //size = size;
   view.setSize(size.x, size.y);
   view.setCenter(size.x / 2, size.y / 2);
   horizon = horizon;
 }
+
 void Camera::updateCamera(sf::FloatRect horizon){
   //std::cout << "target x: " << target->getPosition().x << "\t target y: " << target->getPosition().y << "\n";
   horizon = horizon;
   sf::Vector2f position = target->getPosition();
   sf::Vector2f trgtPos = target->getPosition();
+
   //std::cout << "Printing horizon left " << horizon.left  <<  "\t Printing horizon right  " << horizon.left + horizon.width << "\n";
   if((trgtPos.x - horizon.left) < view.getSize().x / 2){
     position.x = horizon.left + (view.getSize().x / 2);
@@ -95,11 +98,13 @@ void Camera::updateCamera(sf::FloatRect horizon){
 
   view.setCenter(position);
 }
+
 ////////// ANIMATION ////////////
 Animation::Animation()
 {
   timeSinceUpdate = 0.0f;
 }
+
 void Animation::loadAsset(std::string file_path, sf::Sprite &sprite, int wmax, int hmax)
 {
 
@@ -251,7 +256,6 @@ sf::FloatRect Clickable::getClickableArea(){
 /*************** EVENT MANAGER - start *******************/
 
 void EventManager::notifyAll(const sf::Event &event){
-
     if (event.type == sf::Event::MouseButtonPressed)
     {
         if (event.mouseButton.button == sf::Mouse::Left)
@@ -307,8 +311,6 @@ bool WindowManager::init(){
 
   load_assets();
 
-  m_textContainer.init(sf::Vector2f(0.0f, DEFAULT_HEIGHT * 0.8f), DEFAULT_WIDTH, DEFAULT_HEIGHT * 0.2f);
-
   eventMgr = new EventManager();
   MenuContainer *menu = new MenuContainer();
   MenuItem *file = new MenuItem("File", true);
@@ -344,6 +346,7 @@ bool WindowManager::init(){
   camera.initCamera(_window->getSize(), sf::FloatRect(0, 0, 2000.0f, 2000.0f));
   camera.setTarget(link);
 
+  m_textContainer.init(&camera, DEFAULT_WIDTH, DEFAULT_HEIGHT * 0.2f);
   return true;
 }
 
@@ -357,14 +360,25 @@ WindowManager::~WindowManager(){}
 sf::RenderWindow* WindowManager::getWindow(){
   return _window;
 }
+
 void WindowManager::manageEvents(){
   sf::Event event;
-  while (getWindow()->pollEvent(event))
-  {
+  while (getWindow()->pollEvent(event)){
       eventMgr->notifyAll(event);
       notifyObjects(event);
+
+      if(m_gameState == GameState::OnDialog){
+        m_textContainer.onSFEvent(event);
+      }
       if (event.type == sf::Event::Closed)
           getWindow()->close();
+  }
+  // managing custom app events
+  AppEvent appEvent;
+  while(eventMgr->pollEvent(appEvent)){
+    if(appEvent.type == EventType::GameStateChange){
+      m_gameState = appEvent.targetState;
+    }
   }
 }
 
@@ -396,18 +410,18 @@ void WindowManager::draw(){
 void WindowManager::setScenery(Scenery * sc){
   scenary = sc;
 }
+
 void WindowManager::update(){
   float deltas = clock.getElapsedTime().asSeconds();
   //std::cout << "Printing frame rate " << 1 / deltas << " \n";
-
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
     _itemsToDisplay[i]->update(deltas);
   }
+
   camera.updateCamera(sf::FloatRect(0, 0, scenary->mapSize.x, scenary->mapSize.y));
   if(m_gameState == GameState::OnDialog){
     m_textContainer.update(deltas);
   }
-
 }
 
 void WindowManager::checkCollisions(){
@@ -428,6 +442,9 @@ void WindowManager::notifyObjects(sf::Event event){
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
     _itemsToDisplay[i] -> onEvent(event);
   }
+  if(m_gameState == GameState::OnDialog){
+
+  }
 }
 void WindowManager::clearItems(){
   _itemsToDisplay.clear();
@@ -436,6 +453,7 @@ void WindowManager::clearItems(){
 void WindowManager::addDrawable(PDObject * obj){
   _itemsToDisplay.push_back(obj);
 }
+
 /*************** WINDOW MANAGER - end *******************/
 
 /*************** MENU MANAGER - start *******************/
@@ -520,6 +538,7 @@ void MenuItem::setPosition(float x, float y){
 sf::Text MenuItem::getLabel(){
   return _label;
 }
+
 void MenuItem::onclick(){
   std::cout << "You pressed on item " << this->_menuText << "\n";
   WindowManager * wm = WindowManager::getManager();
