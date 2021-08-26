@@ -1,3 +1,5 @@
+#pragma once
+
 #include "sfml.h"
 #include "Object.h"
 #include "EventManager.h"

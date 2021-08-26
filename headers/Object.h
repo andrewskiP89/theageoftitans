@@ -77,6 +77,8 @@ public:
   float rate;
   int currentFrame;
   int currentRow;
+private:
+  float m_rateFactor;
 };
 class Player : public PDObject{
 public:

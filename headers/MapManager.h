@@ -25,7 +25,7 @@ public:
   void generateLayer(const std::string& mapFile, unsigned int width, unsigned int height, float mapScale){
 
     std::vector<int> collidableItemsInMap = {
-      120, 121, 124, 125, 44, 45, 206, 207
+      120, 121, 124, 125, 44, 45, 206, 207, 166, 167
     };
 
     m_vertices.setPrimitiveType(sf::Quads);
@@ -43,7 +43,7 @@ public:
         bool isCollidable = false;
         std::string itemString = rowItems[j];
         int tileNumber = std::stoi(itemString);
-          
+
         if(tileNumber == -1)
           continue;
 

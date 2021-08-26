@@ -13,14 +13,18 @@
 #define MENU_FONT_SIZE 25
 
 #define SRC_FLDR "./assets/fonts/dos_font.ttf"
-#define LINK_SPEED 2.5e5f
+#define LINK_SPEED 4.0e2f
+#define ANIMATION_PERIOD 0.7e-1f
 #define LINK_ASSET "./assets/imgs/link_new.png"
 
 #define MAP_ASSET "./assets/imgs/worldmap.png"
 
 #define TILE_SET "./assets/imgs/titanstileset.png"
-#define LAYER_1 "./assets/levelmap/titans_level1_layer1.csv"
-#define LAYER_2 "./assets/levelmap/titans_level1_layer2.csv"
+//#define LAYER_1 "./assets/levelmap/titans_level1_layer1.csv"
+//#define LAYER_2 "./assets/levelmap/titans_level1_layer2.csv"
+
+#define LAYER_1 "./assets/levelmap/TAOTMap_LevelGround.csv"
+#define LAYER_2 "./assets/levelmap/TAOTMap_WorldLayer.csv"
 
 // managing general font
 sf::Font app_font;
@@ -115,6 +119,7 @@ void Animation::loadAsset(std::string file_path, sf::Sprite &sprite, int wmax, i
     orientation = LEFT;
     currentFrame = 0;
     timeSinceUpdate = 0.0f;
+    m_rateFactor = 1.0f;
     int textureWidth = texture.getSize().x;
     int textureHeight = texture.getSize().y;
     frameSize.x = textureWidth / wmax;
@@ -125,12 +130,13 @@ void Animation::loadAsset(std::string file_path, sf::Sprite &sprite, int wmax, i
     _hmax = hmax;
     _wmax = wmax;
 
-    rate = 0.35e-3f;
+    rate = ANIMATION_PERIOD;
     sprite.setTextureRect(sf::IntRect(0, 5 * frameSize.y, frameSize.x, frameSize.y));
   }
 }
 void Animation::update(P_State pState){
   if(pState == P_State::RUNNING){
+    m_rateFactor = 1.0f;
     if(orientation == HOrientation::UP){
       currentRow = 7;
       _wmax = 8;
@@ -145,6 +151,7 @@ void Animation::update(P_State pState){
       _wmax = 8;
     }
   }else{
+    m_rateFactor = 4.0f;
     if(orientation == HOrientation::UP){
       currentRow = 3;
       _wmax = 1;
@@ -165,8 +172,8 @@ void Animation::getCurrentFrame(float delta, sf::Sprite &sprite)
 
   //std::cout << "Updating at timeSinceUpdate: " << timeSinceUpdate << "\n";
   timeSinceUpdate += delta;
-
-  if(timeSinceUpdate > rate){
+  float currentRateFactor = currentFrame == 0 ? m_rateFactor : 1.00f;
+  if(timeSinceUpdate > rate * currentRateFactor){
     //timeSinceUpdate = 0;
     //std::cout << "Updating at time " << timeSinceUpdate << "\n";
     timeSinceUpdate -= rate;
@@ -189,6 +196,7 @@ void Player::update(float deltas){
   animation.getCurrentFrame(deltas, sprite);
   //std::cout << "Printing deltas " << deltas << "\n";
   m_oldPosition = sprite.getPosition();
+
   sprite.move(speed.x * deltas, speed.y * deltas);
   m_position = sprite.getPosition();
   //std::cout << "Printing speed x " << speed.x << "\t y " << speed.y << "\n";
@@ -200,9 +208,9 @@ void Player::draw(sf::RenderWindow * window){
 }
 
 void Player::onEvent(sf::Event event){
-  if (event.type == sf::Event::KeyPressed){
-    pState = P_State::RUNNING;
-    if(event.key.code == sf::Keyboard::Up){
+  /*if (event.type == sf::Event::KeyPressed){
+
+    /*if(event.key.code == sf::Keyboard::Up){
       animation.orientation = HOrientation::UP;
       speed.y = - LINK_SPEED;
     }
@@ -217,8 +225,51 @@ void Player::onEvent(sf::Event event){
     if(event.key.code == sf::Keyboard::Left){
       animation.orientation = HOrientation::LEFT;
       speed.x = -  LINK_SPEED;
-    }
+    }*/
 
+  /*}else{
+    pState = P_State::NORMAL;
+    speed.x = 0;
+    speed.y = 0;
+  }*/
+  bool moving = false;
+
+  if(event.type == sf::Event::KeyReleased){
+    if(event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::Down){
+      speed.y = 0;
+    }
+    if(event.key.code == sf::Keyboard::Left || event.key.code == sf::Keyboard::Right){
+      speed.x = 0;
+    }
+  }
+  sf::Keyboard::Key lastKeyPressed;
+  if(event.type == sf::Event::KeyPressed){
+    lastKeyPressed = event.key.code;
+  }
+
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Right) && lastKeyPressed != sf::Keyboard::Left){
+    moving = true;
+    animation.orientation = HOrientation::RIGHT;
+    speed.x =  LINK_SPEED;
+  }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Left) && lastKeyPressed != sf::Keyboard::Right){
+    moving = true;
+    animation.orientation = HOrientation::LEFT;
+    speed.x = -  LINK_SPEED;
+  }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Up) && lastKeyPressed != sf::Keyboard::Down){
+    moving = true;
+    animation.orientation = HOrientation::UP;
+    speed.y = - LINK_SPEED;
+  }
+  if(sf::Keyboard::isKeyPressed(sf::Keyboard::Down) && lastKeyPressed != sf::Keyboard::Up){
+    moving = true;
+    animation.orientation = HOrientation::DOWN;
+    speed.y =  LINK_SPEED;
+  }
+
+  if(moving){
+    pState = P_State::RUNNING;
   }else{
     pState = P_State::NORMAL;
     speed.x = 0;
@@ -413,6 +464,7 @@ void WindowManager::setScenery(Scenery * sc){
 
 void WindowManager::update(){
   float deltas = clock.getElapsedTime().asSeconds();
+  clock.restart();
   //std::cout << "Printing frame rate " << 1 / deltas << " \n";
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
     _itemsToDisplay[i]->update(deltas);
@@ -587,12 +639,14 @@ int main(int argc, char const *argv[]) {
     //wManager->getWindow()->setFramerateLimit(60);
     while (wManager->getWindow()->isOpen())
     {
+        //wManager->clock.restart();
+
         wManager->manageEvents();
         wManager->update();
         wManager->checkCollisions();
         wManager->draw();
 
-        wManager->clock.restart();
+
     }
   }catch(const std::exception& exc){
     std::cout << "Something went wrong " << exc.what();
