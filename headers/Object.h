@@ -9,6 +9,7 @@ struct Sector {
   uint8_t currentColumn;
   uint8_t currentRow;
 };
+
 enum P_State {
     NORMAL,
     RUNNING,

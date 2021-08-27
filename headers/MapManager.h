@@ -1,6 +1,6 @@
 #include "sfml.h"
 #include "Object.h"
-
+#include "EventManager.h"
 #include <iostream>
 #include <fstream>
 #include <vector>

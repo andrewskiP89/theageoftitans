@@ -12,10 +12,29 @@ enum GameState { Starting,
                   };
 
 enum EventType{
-  CustomEvent,
+  OnAction,
   GameStateChange,
   TaskCompleted
 };
+enum ActionType{
+  Pull,
+  Push,
+  Use,
+  PickUp,
+  Throw,
+  Study
+};
+struct UsableItem{
+  uint16_t id;
+};
+struct Inventary{
+  std::vector<UsableItem*> items;
+};
+struct PlayerAction{
+  UsableItem *item;
+  ActionType type;
+};
+
 struct AppEvent{
   void *source;
   GameState targetState;

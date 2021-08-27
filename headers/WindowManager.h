@@ -2,8 +2,9 @@
 
 #include "sfml.h"
 #include "Object.h"
-#include "EventManager.h"
+//#include "EventManager.h"
 #include "MapManager.h"
+#include "MusicManager.h"
 
 #ifndef WINDOW_MANAGER_H
 #define WINDOW_MANAGER_H
@@ -79,6 +80,7 @@ private:
     return currentText;
   }
   std::vector<sf::RectangleShape*> m_textBox;
+  AppEvent *relatedEvent;
   sf::Font m_appFont;
   sf::Text *m_currentText;
   sf::Vector2f m_anchorPoint;
@@ -103,6 +105,7 @@ private:
 public:
   GameState m_gameState;
   TextContainer m_textContainer;
+  MusicManager m_musicMgr;
   void setScenery(Scenery *sc);
   sf::Clock clock;
   static WindowManager * getManager();

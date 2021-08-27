@@ -1,7 +1,7 @@
 CC = g++
 SRC_DIR = ./src
 INC_DIR = ./headers/
-SFML_LIB = -lsfml-graphics -lsfml-window -lsfml-system
+SFML_LIB = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
 MAIN = theageoftitans
 OBJ = main.o EventManager.o MapManager.o
 .PHONY: cleanobj

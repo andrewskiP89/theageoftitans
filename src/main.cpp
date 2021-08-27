@@ -397,6 +397,8 @@ bool WindowManager::init(){
   camera.initCamera(_window->getSize(), sf::FloatRect(0, 0, 2000.0f, 2000.0f));
   camera.setTarget(link);
 
+  m_musicMgr.loadTrack();
+
   m_textContainer.init(&camera, DEFAULT_WIDTH, DEFAULT_HEIGHT * 0.2f);
   return true;
 }
@@ -465,6 +467,7 @@ void WindowManager::setScenery(Scenery * sc){
 void WindowManager::update(){
   float deltas = clock.getElapsedTime().asSeconds();
   clock.restart();
+  m_musicMgr.play();
   //std::cout << "Printing frame rate " << 1 / deltas << " \n";
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
     _itemsToDisplay[i]->update(deltas);
@@ -629,13 +632,18 @@ int main(int argc, char const *argv[]) {
   WindowManager *wManager = WindowManager::getManager();
   if(!wManager->init())
     return EXIT_FAILURE;
-
+    
   try{
     Scenery scene;
     scene.loadMapFromFile(MAP_ASSET);
     wManager->setScenery(&scene);
 
     wManager->getWindow()->setVerticalSyncEnabled(true);
+
+    sf::Music music;
+    music.openFromFile("./assets/music/bg_music.wav");
+    music.play();
+
     //wManager->getWindow()->setFramerateLimit(60);
     while (wManager->getWindow()->isOpen())
     {
