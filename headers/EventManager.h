@@ -14,9 +14,10 @@ enum GameState { Starting,
 enum EventType{
   OnAction,
   GameStateChange,
+  ShowMessage,
   TaskCompleted
 };
-enum ActionType{
+enum PActionType{
   Pull,
   Push,
   Use,
@@ -32,7 +33,7 @@ struct Inventary{
 };
 struct PlayerAction{
   UsableItem *item;
-  ActionType type;
+  PActionType type;
 };
 
 struct AppEvent{

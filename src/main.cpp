@@ -632,7 +632,7 @@ int main(int argc, char const *argv[]) {
   WindowManager *wManager = WindowManager::getManager();
   if(!wManager->init())
     return EXIT_FAILURE;
-    
+
   try{
     Scenery scene;
     scene.loadMapFromFile(MAP_ASSET);
