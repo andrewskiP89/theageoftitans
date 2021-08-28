@@ -12,8 +12,17 @@
 class TextContainer : public PDObject{
 public:
   TextContainer(){}
+  void setDialog(Dialog dialog){
+    if(m_dialogIsSet == true)
+      return;
+      
+    m_currentDialog = dialog;
+    m_currentMessage = 0;
+    m_dialogIsSet = true;
+  }
   void init(Camera * camera, float width, float height){
     m_currentText = nullptr;
+    m_dialogIsSet = false;
     if(m_appFont.loadFromFile(APP_FONT)){
       m_padding = 5.0f;
       // building the text container
@@ -39,11 +48,15 @@ public:
   void onSFEvent(sf::Event event){
     if (event.type == sf::Event::KeyPressed){
       if(event.key.code == sf::Keyboard::Escape){
-        AppEvent *aEvent = new AppEvent();
-        aEvent->targetState = GameState::Playing;
-        aEvent->type = EventType::GameStateChange;
-        aEvent->source = this;
-        aEvent->fire();
+        m_currentMessage ++;
+        if(m_currentMessage == m_currentDialog.messages.size()){
+          m_dialogIsSet = false;
+          AppEvent *aEvent = new AppEvent();
+          aEvent->targetState = GameState::Playing;
+          aEvent->type = EventType::GameStateChange;
+          aEvent->source = this;
+          aEvent->fire();
+        }
       }
     }
   }
@@ -76,7 +89,14 @@ public:
   }
 private:
   std::string getCurrentText(){
-    std::string currentText = "Welcome to the Age of Titans. This is a sample long text to test the engine. \n I'm quite sure everything will be displayed on a single line";
+    // = "Welcome to the Age of Titans. This is a sample long text to test the engine. \n I'm quite sure everything will be displayed on a single line";
+    std::string currentText;
+    if(m_dialogIsSet){
+      Message message = m_currentDialog.messages[m_currentMessage];
+      currentText = message.content;
+    }else{
+      currentText = "";
+    }
     return currentText;
   }
   std::vector<sf::RectangleShape*> m_textBox;
@@ -86,6 +106,9 @@ private:
   sf::Vector2f m_anchorPoint;
   float m_padding;
   Camera * m_camera;
+  bool m_dialogIsSet;
+  Dialog m_currentDialog;
+  uint8_t m_currentMessage;
 };
 
 class WindowManager {

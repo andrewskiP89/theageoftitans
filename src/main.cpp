@@ -2,8 +2,8 @@
 #include "../headers/MenuManager.h"
 #include "../headers/sfml.h"
 #include "../headers/WindowManager.h"
-#include "../headers/EventManager.h"
-#include "../headers/MapManager.h"
+//#include "../headers/EventManager.h" // commented as everything should only be included in WindowManager
+//#include "../headers/MapManager.h"
 
 #include <iostream>
 // MAIN APP CONFIGS
@@ -358,7 +358,7 @@ sf::Vector2f  PDObject::getPosition(){ return sf::Vector2f(0.0f, 0.0f);}
 
 bool WindowManager::init(){
   // initing the menu
-  m_gameState = GameState::OnDialog; // default will be set to Starting at one point
+  m_gameState = GameState::Playing; // default will be set to Starting at one point
 
   load_assets();
 
@@ -397,7 +397,7 @@ bool WindowManager::init(){
   camera.initCamera(_window->getSize(), sf::FloatRect(0, 0, 2000.0f, 2000.0f));
   camera.setTarget(link);
 
-  m_musicMgr.loadTrack();
+  //m_musicMgr.loadTrack();
 
   m_textContainer.init(&camera, DEFAULT_WIDTH, DEFAULT_HEIGHT * 0.2f);
   return true;
@@ -429,8 +429,13 @@ void WindowManager::manageEvents(){
   // managing custom app events
   AppEvent appEvent;
   while(eventMgr->pollEvent(appEvent)){
+    std::cout << "Printing event type "  << appEvent.type << "\n";
     if(appEvent.type == EventType::GameStateChange){
       m_gameState = appEvent.targetState;
+    }
+    if(appEvent.type == EventType::ShowMessage){
+      m_gameState = GameState::OnDialog;
+      m_textContainer.setDialog(appEvent.dialog);
     }
   }
 }
@@ -467,7 +472,7 @@ void WindowManager::setScenery(Scenery * sc){
 void WindowManager::update(){
   float deltas = clock.getElapsedTime().asSeconds();
   clock.restart();
-  m_musicMgr.play();
+  //m_musicMgr.play();
   //std::cout << "Printing frame rate " << 1 / deltas << " \n";
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
     _itemsToDisplay[i]->update(deltas);
@@ -488,6 +493,20 @@ void WindowManager::checkCollisions(){
     for(auto item : currentLevelLayer->m_collidableItems){
       if(itemArea.intersects(*item)){
         _itemsToDisplay[i]->onCollision();
+      }
+    }
+    for(auto item  : currentLevelLayer-> m_eventAreas){
+      if(itemArea.intersects(*item.first)){
+
+        for(auto event : item.second){
+          /*AppEvent *eventToFire = new AppEvent(event);
+          eventToFire->fire();*/
+          eventMgr->fireEvent(event);
+          //eventToFire->type = EventType::ShowMessage;
+          //std::cout << "Registered event having type : " << event.type << "\n";
+        }
+      }else{
+        eventMgr->clearEvents(item.second);
       }
     }
   }
