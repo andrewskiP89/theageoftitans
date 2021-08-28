@@ -1,11 +1,15 @@
 #include "sfml.h"
 #ifndef OBJECT_H
 #define OBJECT_H
+
+#define APP_FONT "./assets/fonts/dos_font.ttf"
+#define APP_FONT_SIZE 35
 struct Sector {
   float size;
   uint8_t currentColumn;
   uint8_t currentRow;
 };
+
 enum P_State {
     NORMAL,
     RUNNING,
@@ -37,6 +41,9 @@ public:
   void initCamera(sf::Vector2u size, sf::FloatRect horizon);
   void updateCamera(sf::FloatRect horizon);
   sf::View view;
+  sf::View getView(){
+    return view;
+  }
 };
 
 
@@ -71,6 +78,8 @@ public:
   float rate;
   int currentFrame;
   int currentRow;
+private:
+  float m_rateFactor;
 };
 class Player : public PDObject{
 public:
