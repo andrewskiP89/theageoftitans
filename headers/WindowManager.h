@@ -13,9 +13,9 @@ class TextContainer : public PDObject{
 public:
   TextContainer(){}
   void setDialog(Dialog dialog){
-    if(m_dialogIsSet == true)
+    if(m_dialogIsSet == true) // are we sure to keep it?
       return;
-      
+
     m_currentDialog = dialog;
     m_currentMessage = 0;
     m_dialogIsSet = true;

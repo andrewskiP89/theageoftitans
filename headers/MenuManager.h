@@ -29,10 +29,21 @@ protected:
   std::vector<MenuItem*> _menuItems;
 public:
   MenuContainer ();
-  void addMenuItem(MenuItem * item);
-  void draw(sf::RenderWindow * window);
+  virtual void addMenuItem(MenuItem * item);
+  virtual void draw(sf::RenderWindow * window);
   std::vector<MenuItem*> getClickables();
   ~MenuContainer ();
+};
+
+class ActionMenu : public MenuContainer{
+public:
+  ActionMenu ();
+  void setCamera(const Camera &camera);
+  void addMenuItem(MenuItem * item) override;
+
+private:
+  bool m_cameraInited;
+  Camera m_camera;
 };
 
 class MenuDropdown :  public PDObject{

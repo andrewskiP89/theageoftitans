@@ -3,7 +3,7 @@ SRC_DIR = ./src
 INC_DIR = ./headers/
 SFML_LIB = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
 MAIN = theageoftitans
-OBJ = main.o EventManager.o MapManager.o
+OBJ = main.o EventManager.o MapManager.o MenuManager.o
 .PHONY: cleanobj
 
 $(MAIN): $(OBJ)
@@ -17,6 +17,9 @@ EventManager.o: $(SRC_DIR)/EventManager.cpp
 
 MapManager.o: $(SRC_DIR)/MapManager.cpp
 	$(CC)  -c $(SRC_DIR)/MapManager.cpp -I $(INC_DIR)
+
+MenuManager.o: $(SRC_DIR)/MenuManager.cpp
+	$(CC)  -c $(SRC_DIR)/MenuManager.cpp -I $(INC_DIR)
 
 cleanobj:
 	rm *.o

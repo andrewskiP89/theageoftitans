@@ -7,6 +7,7 @@
 enum GameState { Starting,
                   Playing,
                   Pause,
+                  OnActionMenu,
                   OnMenu,
                   OnDialog
                   };

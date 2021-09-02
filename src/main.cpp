@@ -7,24 +7,7 @@
 
 #include <iostream>
 // MAIN APP CONFIGS
-#define PB_DASHBOARD_TITLE "The age of Titans"
-#define DEFAULT_WIDTH 1600
-#define DEFAULT_HEIGHT 900
-#define MENU_FONT_SIZE 25
 
-#define SRC_FLDR "./assets/fonts/dos_font.ttf"
-#define LINK_SPEED 4.0e2f
-#define ANIMATION_PERIOD 0.7e-1f
-#define LINK_ASSET "./assets/imgs/link_new.png"
-
-#define MAP_ASSET "./assets/imgs/worldmap.png"
-
-#define TILE_SET "./assets/imgs/titanstileset.png"
-//#define LAYER_1 "./assets/levelmap/titans_level1_layer1.csv"
-//#define LAYER_2 "./assets/levelmap/titans_level1_layer2.csv"
-
-#define LAYER_1 "./assets/levelmap/TAOTMap_LevelGround.csv"
-#define LAYER_2 "./assets/levelmap/TAOTMap_WorldLayer.csv"
 
 // managing general font
 sf::Font app_font;
@@ -233,8 +216,15 @@ void Player::onEvent(sf::Event event){
     speed.y = 0;
   }*/
   bool moving = false;
+  if(event.type == sf::Event::KeyPressed){
+    if(event.key.code == sf::Keyboard::A){
+      AppEvent *tAMenu = new AppEvent();
+      tAMenu->type = EventType::GameStateChange;
+      tAMenu->targetState = GameState::OnActionMenu;
+      tAMenu->fire();
+    }
 
-  if(event.type == sf::Event::KeyReleased){
+  }else if(event.type == sf::Event::KeyReleased){
     if(event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::Down){
       speed.y = 0;
     }
@@ -242,6 +232,7 @@ void Player::onEvent(sf::Event event){
       speed.x = 0;
     }
   }
+
   sf::Keyboard::Key lastKeyPressed;
   if(event.type == sf::Event::KeyPressed){
     lastKeyPressed = event.key.code;
@@ -363,7 +354,7 @@ bool WindowManager::init(){
   load_assets();
 
   eventMgr = new EventManager();
-  MenuContainer *menu = new MenuContainer();
+  /*MenuContainer *menu = new MenuContainer();
   MenuItem *file = new MenuItem("File", true);
   menu->addMenuItem(file);
   MenuItem *edit = new MenuItem("Edit", true);
@@ -371,20 +362,15 @@ bool WindowManager::init(){
   MenuItem *view = new MenuItem("View", true);
   menu->addMenuItem(view);
 
+
   MenuDropdown *dropdown = new MenuDropdown(*file);
   MenuItem *createFile = new MenuItem("New File");
   dropdown->addMenuItem(createFile);
   MenuItem *openFile = new MenuItem("Open File");
   dropdown->addMenuItem(openFile);
 
-  file->linkDropdown(dropdown);
+  file->linkDropdown(dropdown);*/
 
-  _windowItems.push_back(menu);
-  //_windowItems.push_back(dropdown);
-
-  for(auto item : menu->getClickables()){
-    eventMgr->registerItem(item);
-  }
   gameMap.load(TILE_SET, sf::Vector2u(16, 16));
   gameMap.addLayer(LAYER_1, 50, 50);
   gameMap.addLayer(LAYER_2, 50, 50);
@@ -396,6 +382,24 @@ bool WindowManager::init(){
 
   camera.initCamera(_window->getSize(), sf::FloatRect(0, 0, 2000.0f, 2000.0f));
   camera.setTarget(link);
+
+  ActionMenu *menu = new ActionMenu();
+  MenuItem *push = new MenuItem("Push", true);
+  menu->addMenuItem(push);
+  MenuItem *pull = new MenuItem("Pull", true);
+  menu->addMenuItem(pull);
+  MenuItem *take = new MenuItem("Take", true);
+  menu->addMenuItem(take);
+  MenuItem *use = new MenuItem("Use", true);
+  menu->addMenuItem(use);
+
+  menu->setCamera(camera);
+  _windowItems.push_back(menu);
+  //_windowItems.push_back(dropdown);
+
+  for(auto item : menu->getClickables()){
+    eventMgr->registerItem(item);
+  }
 
   //m_musicMgr.loadTrack();
 
@@ -449,9 +453,7 @@ void WindowManager::draw(){
     if(levelLayers.size() > 0){
       _window->draw(*levelLayers[0]);
     }
-    for(int i = 0; i < _windowItems.size(); i ++){
-      _windowItems[i]->draw(_window);
-    }
+
     for(int i = 0; i < _itemsToDisplay.size(); i ++){
       _itemsToDisplay[i]->draw(_window);
     }
@@ -462,6 +464,11 @@ void WindowManager::draw(){
     }
     if(m_gameState == GameState::OnDialog){
       m_textContainer.draw(_window);
+    }else if(m_gameState == GameState::OnActionMenu){
+      // draw menu
+      for(int i = 0; i < _windowItems.size(); i ++){
+        _windowItems[i]->draw(_window);
+      }
     }
     _window->display();
 }

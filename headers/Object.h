@@ -2,8 +2,30 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+// @TODO all definitions to be moved to a dedicated header
+#define PB_DASHBOARD_TITLE "The age of Titans"
+#define DEFAULT_WIDTH 1600
+#define DEFAULT_HEIGHT 900
+#define MENU_FONT_SIZE 35
+
+#define SRC_FLDR "./assets/fonts/dos_font.ttf"
+#define LINK_SPEED 4.0e2f
+#define ANIMATION_PERIOD 0.7e-1f
+#define LINK_ASSET "./assets/imgs/link_new.png"
+
+#define MAP_ASSET "./assets/imgs/worldmap.png"
+
+#define TILE_SET "./assets/imgs/titanstileset.png"
+//#define LAYER_1 "./assets/levelmap/titans_level1_layer1.csv"
+//#define LAYER_2 "./assets/levelmap/titans_level1_layer2.csv"
+
+#define LAYER_1 "./assets/levelmap/TAOTMap_LevelGround.csv"
+#define LAYER_2 "./assets/levelmap/TAOTMap_WorldLayer.csv"
+
 #define APP_FONT "./assets/fonts/dos_font.ttf"
 #define APP_FONT_SIZE 35
+
+
 struct Sector {
   float size;
   uint8_t currentColumn;
@@ -45,7 +67,6 @@ public:
     return view;
   }
 };
-
 
 class Scenery : public PDObject{
 public:
