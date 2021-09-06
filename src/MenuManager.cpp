@@ -12,9 +12,27 @@ ActionMenu::ActionMenu(){
 
 void ActionMenu::setCamera(const Camera &camera){
   m_camera = camera;
-  m_cameraInited = true;
+  if(m_cameraInited == false){
+    m_oldPosition = camera.getView().getCenter();
+    m_cameraInited = true;
+  }
 }
 
+void ActionMenu::update(float deltas){
+
+  sf::Vector2f currentPosition = m_camera.getView().getCenter();
+
+  if(currentPosition != m_oldPosition){
+    sf::Vector2f menuOffset = currentPosition - m_oldPosition;
+
+    std::cout << "Moving camera offset x:" << menuOffset.x << "\ty: " << menuOffset.y << "\n";
+    _menuBar->move(menuOffset);
+    for(auto item : _menuItems){
+      item->_label.move(menuOffset);
+    }
+    m_oldPosition = currentPosition;
+  }
+}
 void ActionMenu::addMenuItem(MenuItem * item) {
 
   int menuLength = _menuItems.size();

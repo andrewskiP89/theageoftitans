@@ -82,7 +82,7 @@ void Camera::updateCamera(sf::FloatRect horizon){
   if((horizon.top + horizon.height - trgtPos.y) < view.getSize().y / 2){
     position.y = horizon.top + horizon.height  - (view.getSize().y / 2);
   }
-
+  //std::cout << "Camera position  x:" << position.x << "\ty: " << position.y << "\n";
   view.setCenter(position);
 }
 
@@ -383,21 +383,23 @@ bool WindowManager::init(){
   camera.initCamera(_window->getSize(), sf::FloatRect(0, 0, 2000.0f, 2000.0f));
   camera.setTarget(link);
 
-  ActionMenu *menu = new ActionMenu();
+  //ActionMenu *menu = new ActionMenu();
+  ActionMenu menu;
   MenuItem *push = new MenuItem("Push", true);
-  menu->addMenuItem(push);
+  menu.addMenuItem(push);
   MenuItem *pull = new MenuItem("Pull", true);
-  menu->addMenuItem(pull);
+  menu.addMenuItem(pull);
   MenuItem *take = new MenuItem("Take", true);
-  menu->addMenuItem(take);
+  menu.addMenuItem(take);
   MenuItem *use = new MenuItem("Use", true);
-  menu->addMenuItem(use);
+  menu.addMenuItem(use);
 
-  menu->setCamera(camera);
-  _windowItems.push_back(menu);
+  //menu.setCamera(camera);
+  m_actionMenu = menu;
+  //_windowItems.push_back(menu);
   //_windowItems.push_back(dropdown);
 
-  for(auto item : menu->getClickables()){
+  for(auto item : menu.getClickables()){
     eventMgr->registerItem(item);
   }
 
@@ -466,9 +468,10 @@ void WindowManager::draw(){
       m_textContainer.draw(_window);
     }else if(m_gameState == GameState::OnActionMenu){
       // draw menu
-      for(int i = 0; i < _windowItems.size(); i ++){
+      m_actionMenu.draw(_window);
+      /*for(int i = 0; i < _windowItems.size(); i ++){
         _windowItems[i]->draw(_window);
-      }
+      }*/
     }
     _window->display();
 }
@@ -481,11 +484,23 @@ void WindowManager::update(){
   clock.restart();
   //m_musicMgr.play();
   //std::cout << "Printing frame rate " << 1 / deltas << " \n";
-  for(int i = 0; i < _itemsToDisplay.size(); i ++){
-    _itemsToDisplay[i]->update(deltas);
+  if(m_gameState == GameState::OnDialog || m_gameState == GameState::Playing){
+    for(int i = 0; i < _itemsToDisplay.size(); i ++){
+      _itemsToDisplay[i]->update(deltas);
+    }
   }
 
+
   camera.updateCamera(sf::FloatRect(0, 0, scenary->mapSize.x, scenary->mapSize.y));
+  m_actionMenu.setCamera(camera);
+
+  if(m_gameState == GameState::OnActionMenu){
+
+    m_actionMenu.update(deltas);
+    /*for(auto menuItem : _windowItems){
+      menuItem->update(deltas);
+    }*/
+  }
   if(m_gameState == GameState::OnDialog){
     m_textContainer.update(deltas);
   }
@@ -626,7 +641,7 @@ void MenuItem::onclick(){
   //std::cout << "Here we go again";
   if(_isRoot){
     //std::cout << "clearing the  displayed items";
-    wm->clearItems();
+    //wm->clearItems();
   }
 
   if(_atype == ActionType::show_menu){

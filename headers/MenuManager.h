@@ -1,3 +1,4 @@
+
 #include "sfml.h"
 #include "Object.h"
 
@@ -40,9 +41,11 @@ public:
   ActionMenu ();
   void setCamera(const Camera &camera);
   void addMenuItem(MenuItem * item) override;
+  void update(float deltas) override;
 
 private:
   bool m_cameraInited;
+  sf::Vector2f m_oldPosition;
   Camera m_camera;
 };
 

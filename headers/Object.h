@@ -45,7 +45,7 @@ public:
   sf::Sprite sprite;
   virtual void draw(sf::RenderWindow * window);
   virtual void update(float deltas);
-  virtual void onEvent(sf::Event event);
+  virtual void onEvent(sf::Event event); // sf event needs to be updated
   virtual void onCollision();
   sf::FloatRect getBounds(){
     return sprite.getGlobalBounds();
@@ -63,7 +63,7 @@ public:
   void initCamera(sf::Vector2u size, sf::FloatRect horizon);
   void updateCamera(sf::FloatRect horizon);
   sf::View view;
-  sf::View getView(){
+  sf::View getView() const{
     return view;
   }
 };
