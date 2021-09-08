@@ -6,6 +6,7 @@
 //#include "../headers/MapManager.h"
 
 #include <iostream>
+#include <string>
 // MAIN APP CONFIGS
 
 
@@ -344,6 +345,7 @@ WindowManager * WindowManager::getManager(){
 void PDObject::draw(sf::RenderWindow *window){}
 void PDObject::update(float deltas){}
 void PDObject::onEvent(sf::Event event){}
+void PDObject::onAppEvent(AppEvent event){}
 void PDObject::onCollision(){}
 sf::Vector2f  PDObject::getPosition(){ return sf::Vector2f(0.0f, 0.0f);}
 
@@ -429,6 +431,9 @@ void WindowManager::manageEvents(){
       if(m_gameState == GameState::OnDialog){
         m_textContainer.onSFEvent(event);
       }
+      if(m_gameState == GameState::OnActionMenu){
+        m_actionMenu.onEvent(event);
+      }
       if (event.type == sf::Event::Closed)
           getWindow()->close();
   }
@@ -437,6 +442,7 @@ void WindowManager::manageEvents(){
   while(eventMgr->pollEvent(appEvent)){
     std::cout << "Printing event type "  << appEvent.type << "\n";
     if(appEvent.type == EventType::GameStateChange){
+      std::cout << "Changing the GameState to " << appEvent.targetState << "\n";
       m_gameState = appEvent.targetState;
     }
     if(appEvent.type == EventType::ShowMessage){
@@ -489,7 +495,6 @@ void WindowManager::update(){
       _itemsToDisplay[i]->update(deltas);
     }
   }
-
 
   camera.updateCamera(sf::FloatRect(0, 0, scenary->mapSize.x, scenary->mapSize.y));
   m_actionMenu.setCamera(camera);
@@ -629,6 +634,7 @@ MenuItem::MenuItem(const std::string menuText, bool isRoot){
 
 void MenuItem::setPosition(float x, float y){
   _label.setPosition(x, y);
+  m_clickableArea = _label.getGlobalBounds();
 }
 
 sf::Text MenuItem::getLabel(){
@@ -664,7 +670,11 @@ void MenuItem::linkDropdown(void *md){
 }
 
 sf::FloatRect MenuItem::getClickableArea(){
-  return _label.getGlobalBounds();
+  sf::FloatRect globalBounds = m_clickableArea;
+  std::string labelText = _label.getString();
+
+  return m_clickableArea;
+  //return _label.getLocalBounds();
 }
 /*************** MENU MANAGER - end *******************/
 

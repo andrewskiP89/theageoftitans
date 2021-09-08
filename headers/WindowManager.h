@@ -45,7 +45,7 @@ public:
   void setCamera(Camera * camera){
     m_camera = camera;
   }
-  void onSFEvent(sf::Event event){
+  void onSFEvent(sf::Event event) {
     if (event.type == sf::Event::KeyPressed){
       if(event.key.code == sf::Keyboard::Escape){
         m_currentMessage ++;

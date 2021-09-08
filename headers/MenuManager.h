@@ -15,6 +15,7 @@ private:
   bool _isRoot;
 public:
   sf::Text _label;
+  sf::FloatRect m_clickableArea;
   void *_md;
   sf::Text getLabel();
   void linkDropdown(void *md);
@@ -42,7 +43,7 @@ public:
   void setCamera(const Camera &camera);
   void addMenuItem(MenuItem * item) override;
   void update(float deltas) override;
-
+  void onEvent(sf::Event event) override;
 private:
   bool m_cameraInited;
   sf::Vector2f m_oldPosition;

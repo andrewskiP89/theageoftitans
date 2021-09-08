@@ -1,4 +1,5 @@
 #include "../headers/MenuManager.h"
+#include "../headers/EventManager.h"
 
 ActionMenu::ActionMenu(){
   m_cameraInited = false;
@@ -51,4 +52,13 @@ void ActionMenu::addMenuItem(MenuItem * item) {
 
   //item->setPosition(90.0f * menuLength, 0.0f);
   _menuItems.push_back(item);
+}
+
+void ActionMenu::onEvent(sf::Event event){
+  if (event.type == sf::Event::KeyPressed){
+    if(event.key.code == sf::Keyboard::Escape){
+      std::cout << "Exiting the Action Menu\n";
+      EventManager::changeGameState(GameState::Playing);
+    }
+  }
 }

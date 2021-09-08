@@ -4,6 +4,8 @@
 std::vector<AppEvent*> EventManager::m_eventQueue; // definition
 std::set<std::string> EventManager::m_fireEventIds;
 
+
+
 void AppEvent::fire(){
   if(type == EventType::ShowMessage || singleTime){
     if(EventManager::m_fireEventIds.size() == 0 ||
@@ -17,6 +19,16 @@ void AppEvent::fire(){
   }
 
 }
+
+bool EventManager::pollEvent(AppEvent &event){
+  if(m_eventQueue.size() > 0){
+    event = * (m_eventQueue.back());
+    m_eventQueue.pop_back();
+    return true;
+  }
+  return false;
+}
+
 void EventManager::fireEvent(AppEvent &event){
   AppEvent *eventToFire = new AppEvent(event);
   eventToFire->fire();
@@ -26,6 +38,13 @@ void EventManager::clearEvents(std::vector<AppEvent> &events){
   for(auto event : events){
     EventManager::m_fireEventIds.erase(event.id);
   }
+}
+void EventManager::changeGameState(GameState targetGameState){
+  AppEvent *aEvent = new AppEvent();
+  aEvent->targetState = targetGameState;
+  aEvent->type = EventType::GameStateChange;
+  //aEvent->source = this;
+  aEvent->fire();
 }
 
 std::vector<AppEvent> EventManager::loadEventsFromMap(EventCoordinate coordinate, std::map<std::string, std::vector<std::string>> sourceMap){

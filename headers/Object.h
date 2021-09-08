@@ -1,4 +1,5 @@
 #include "sfml.h"
+
 #ifndef OBJECT_H
 #define OBJECT_H
 
@@ -25,6 +26,69 @@
 #define APP_FONT "./assets/fonts/dos_font.ttf"
 #define APP_FONT_SIZE 35
 
+enum GameState { Starting,
+                  Playing,
+                  Pause,
+                  OnActionMenu,
+                  OnMenu,
+                  OnDialog
+                  };
+
+enum EventType{
+  OnAction,
+  GameStateChange,
+  ShowMessage,
+  TaskCompleted
+};
+enum PActionType{
+  Pull,
+  Push,
+  Use,
+  PickUp,
+  Throw,
+  Study
+};
+struct UsableItem{
+  uint16_t id;
+};
+struct Inventary{
+  std::vector<UsableItem*> items;
+};
+struct PlayerAction{
+  UsableItem *item;
+  PActionType type;
+};
+struct Message{
+  Message(){
+    //sourcePlayer = nullptr;
+    from = "";
+  };
+  std::string content;
+  std::string from;
+  //Player *sourcePlayer;
+};
+struct Dialog{
+  std::vector<Message> messages;
+};
+struct AppEvent{
+  std::string id;
+  void *source;
+  GameState targetState;
+  int requiredTask;
+  uint16_t taskCompleted;
+  Dialog dialog;
+  EventType type;
+  bool singleTime;
+  void fire();
+};
+
+struct EventCoordinate {
+  uint8_t currentLayer;
+  uint8_t currentLevel;
+
+  uint8_t currentRow;
+  uint8_t currentColumn;
+};
 
 struct Sector {
   float size;
@@ -46,6 +110,7 @@ public:
   virtual void draw(sf::RenderWindow * window);
   virtual void update(float deltas);
   virtual void onEvent(sf::Event event); // sf event needs to be updated
+  virtual void onAppEvent(AppEvent event);
   virtual void onCollision();
   sf::FloatRect getBounds(){
     return sprite.getGlobalBounds();
