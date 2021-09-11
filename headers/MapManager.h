@@ -14,6 +14,18 @@
 #ifndef MAP_MANAGER_H
 #define MAP_MANAGER_H
 
+extern std::map<std::string, std::vector<std::string>> WORLD_EVENT_MAP;
+extern std::map<std::string, std::vector<std::string>> TILE_SET_EVENT_MAP;
+
+class WorldItem : public Clickable{
+public:
+  WorldItem(sf::FloatRect *area);
+  virtual void onclick() override;
+  virtual sf::FloatRect getClickableArea() override;
+  std::vector<AppEvent> m_events;
+private:
+  sf::FloatRect *m_area;
+};
 
 class MapLayer : public sf::Drawable, public sf::Transformable
 {
@@ -79,13 +91,28 @@ public:
           m_collidableItems.push_back(r);
         }
 
-        std::vector<AppEvent> appEventList = EventManager::loadEventsFromMap(coordinate, WORLD_EVENT_MAP);
-        if(appEventList.size() > 0){
+
+        std::map<TriggerType, std::vector<AppEvent>> appEventMap = EventManager::loadEventsFromMap(coordinate, WORLD_EVENT_MAP);
+
+        if(appEventMap.find(TriggerType::OnCollision) != appEventMap.end()){
           sf::FloatRect *r  = new sf::FloatRect(j * m_tileSize.x * mapScale,
                                                 i * m_tileSize.y * mapScale,
                                                 m_tileSize.x * mapScale,
                                                 m_tileSize.y * mapScale);
-          m_eventAreas[r] =  appEventList;
+
+          m_eventAreas[r] =  appEventMap.find(TriggerType::OnCollision)->second;
+
+
+        }else if(appEventMap.find(TriggerType::OnClick) != appEventMap.end()){
+          sf::FloatRect *r  = new sf::FloatRect(j * m_tileSize.x * mapScale,
+                                                i * m_tileSize.y * mapScale,
+                                                m_tileSize.x * mapScale,
+                                                m_tileSize.y * mapScale);
+
+          std::vector<AppEvent> clickEvents =  appEventMap.find(TriggerType::OnClick)->second;
+          WorldItem *wi = new WorldItem(r);
+          wi->m_events = clickEvents;
+          m_worldItems.push_back(wi);
         }
 
         // define its 4 texture coordinates
@@ -96,10 +123,12 @@ public:
       }
       i ++;
     }
-    std::cout << "Printing event map size: " << m_eventAreas.size() << "\n";
+    std::cout << "Printing collision event map size: " << m_eventAreas.size() << "\n";
+    std::cout << "Printing world clickcable events size: " << m_worldItems.size() << "\n";
   }
   std::vector<sf::FloatRect*> m_collidableItems;
   std::map<sf::FloatRect*, std::vector<AppEvent>> m_eventAreas;
+  std::vector<WorldItem*> m_worldItems;
 
 private:
   virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const

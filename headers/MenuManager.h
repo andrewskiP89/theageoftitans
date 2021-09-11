@@ -44,6 +44,7 @@ public:
   void addMenuItem(MenuItem * item) override;
   void update(float deltas) override;
   void onEvent(sf::Event event) override;
+  std::vector<AppEvent> m_loadedEvents;
 private:
   bool m_cameraInited;
   sf::Vector2f m_oldPosition;

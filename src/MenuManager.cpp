@@ -24,6 +24,7 @@ void ActionMenu::update(float deltas){
   sf::Vector2f currentPosition = m_camera.getView().getCenter();
 
   if(currentPosition != m_oldPosition){
+    std::cout << "Number of events loaded : " << m_loadedEvents.size();
     sf::Vector2f menuOffset = currentPosition - m_oldPosition;
 
     std::cout << "Moving camera offset x:" << menuOffset.x << "\ty: " << menuOffset.y << "\n";

@@ -34,6 +34,11 @@ enum GameState { Starting,
                   OnDialog
                   };
 
+enum TriggerType {
+  OnClick,
+  OnCollision
+};
+
 enum EventType{
   OnAction,
   GameStateChange,
@@ -46,7 +51,8 @@ enum PActionType{
   Use,
   PickUp,
   Throw,
-  Study
+  Study,
+  None
 };
 struct UsableItem{
   uint16_t id;
@@ -77,7 +83,9 @@ struct AppEvent{
   int requiredTask;
   uint16_t taskCompleted;
   Dialog dialog;
+  PlayerAction action;
   EventType type;
+  TriggerType triggerType = TriggerType::OnCollision;
   bool singleTime;
   void fire();
 };
@@ -107,6 +115,7 @@ enum HOrientation{
 class PDObject{
 public:
   sf::Sprite sprite;
+  size_t m_zLayer;
   virtual void draw(sf::RenderWindow * window);
   virtual void update(float deltas);
   virtual void onEvent(sf::Event event); // sf event needs to be updated
@@ -143,11 +152,15 @@ public:
 };
 
 class Clickable {
+
 public:
+  bool m_isLocalItem = true;
+  bool const isLocal();
   Clickable();
   virtual void onclick();
   virtual sf::FloatRect getClickableArea();
 };
+
 class Animation{
 public:
   Animation();

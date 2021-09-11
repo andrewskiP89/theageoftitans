@@ -39,6 +39,11 @@ void EventManager::clearEvents(std::vector<AppEvent> &events){
     EventManager::m_fireEventIds.erase(event.id);
   }
 }
+void EventManager::triggerActionMenu(std::vector<AppEvent> eventsToLoad, const UsableItem& iitem){
+  EventManager::changeGameState(GameState::OnActionMenu);
+}
+
+
 void EventManager::changeGameState(GameState targetGameState){
   AppEvent *aEvent = new AppEvent();
   aEvent->targetState = targetGameState;
@@ -47,8 +52,9 @@ void EventManager::changeGameState(GameState targetGameState){
   aEvent->fire();
 }
 
-std::vector<AppEvent> EventManager::loadEventsFromMap(EventCoordinate coordinate, std::map<std::string, std::vector<std::string>> sourceMap){
+std::map<TriggerType, std::vector<AppEvent>> EventManager::loadEventsFromMap(EventCoordinate coordinate, std::map<std::string, std::vector<std::string>> sourceMap){
   std::vector<AppEvent> eventList;
+  std::map<TriggerType, std::vector<AppEvent>>  eventsTTypeMap;
 
   uint8_t currentLevel = coordinate.currentLevel;
   std::map<std::string, AppEvent> eventMap = EventManager::getAllEvents(currentLevel);
@@ -69,8 +75,13 @@ std::vector<AppEvent> EventManager::loadEventsFromMap(EventCoordinate coordinate
     auto currentEvent = eventMap.find(id);
     if(currentEvent != eventMap.end()){
       std::cout << "Printing event type " << currentEvent->second.type << "\n";
+      if(eventsTTypeMap.find(currentEvent->second.triggerType) == eventsTTypeMap.end()){
+        eventsTTypeMap[currentEvent->second.triggerType] = {};
+      }
+      eventsTTypeMap.find(currentEvent->second.triggerType)->second.push_back(currentEvent->second);
+
       eventList.push_back(currentEvent->second);
     }
   }
-  return eventList;
+  return eventsTTypeMap;
 }

@@ -12,7 +12,9 @@ public:
   static std::vector<AppEvent*> m_eventQueue;
   static std::set<std::string> m_fireEventIds;
   static void changeGameState(GameState targetGameState);
-  static std::vector<AppEvent> loadEventsFromMap(EventCoordinate coordinate, std::map<std::string, std::vector<std::string>> sourceMap);
+  static void triggerActionMenu(std::vector<AppEvent> eventsToLoad, const UsableItem& iitem); // possible actions to be invoked by menu and item selected
+                                                                                      // fromt the inventory
+  static std::map<TriggerType, std::vector<AppEvent>> loadEventsFromMap(EventCoordinate coordinate, std::map<std::string, std::vector<std::string>> sourceMap);
   static std::map<std::string, AppEvent> getAllEvents(uint8_t currentLevel);
   static void publishEvent(AppEvent);
   void notifyAll(const sf::Event &event);

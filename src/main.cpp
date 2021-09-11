@@ -293,6 +293,10 @@ sf::FloatRect Clickable::getClickableArea(){
   return  rect;
 }
 
+bool const Clickable::isLocal(){
+  return m_isLocalItem;
+}
+
 /*CLICKABLES - end **/
 
 
@@ -306,15 +310,34 @@ void EventManager::notifyAll(const sf::Event &event){
             std::cout << "the left button was pressed" << std::endl;
             std::cout << "mouse x: " << event.mouseButton.x << std::endl;
             std::cout << "mouse y: " << event.mouseButton.y << std::endl;
+            std::cout << "Subrscribers size : " << _clickSubscribers.size() << std::endl;
             // Using a for loop with iterator
+
             for(int i = 0; i < _clickSubscribers.size(); i++){
               Clickable *c = _clickSubscribers[i];
               sf::FloatRect carea = c->getClickableArea();
+              sf::Vector2f localMouse(event.mouseButton.x, event.mouseButton.y);
+              WindowManager *wm = WindowManager::getManager();
+              Camera camera = wm->camera;
+              sf::Vector2f cameraCenter = camera.getView().getCenter();
+              sf::Vector2f cameraTranslation(cameraCenter.x - DEFAULT_WIDTH / 2, cameraCenter.y - DEFAULT_HEIGHT / 2);
+              sf::Vector2f globalMouse = localMouse + cameraTranslation;
+              std::cout << "Global mouse x: " << globalMouse.x << std::endl;
+              std::cout << "Global mouse y: " << globalMouse.y << std::endl;
+              if(c->isLocal()){
+                if(carea.contains(sf::Vector2f(localMouse.x, localMouse.y))){
+                  std::cout << "clicking on item \n";
+                  c->onclick();
+                }
+              }else{
+                if(carea.contains(sf::Vector2f(globalMouse.x, globalMouse.y))){
+                  std::cout << "clicking on world item \n";
+                  c->onclick();
+                }
+              }
 
-              if(carea.contains(sf::Vector2f(event.mouseButton.x, event.mouseButton.y)))
-                c->onclick();
+
             }
-
         }
     }
 }
@@ -380,7 +403,18 @@ bool WindowManager::init(){
   //add player here
   Player * link = new Player();
   link->animation.loadAsset(LINK_ASSET, link->sprite, 10, 8);
+  link->m_zLayer = 1;
+  m_currentPlayer = link;
   addDrawable(link);
+
+  // @TODO - the following code needs to be inovked
+  // whenever the currentPlayer level changes
+  size_t playableLayer = m_currentPlayer-> m_zLayer;
+  MapLayer *currentLevelLayer = gameMap.m_layers[playableLayer];
+  for(auto item : currentLevelLayer->m_worldItems){
+      std::cout << "Registering world item \n";
+      eventMgr->registerItem(item);
+  }
 
   camera.initCamera(_window->getSize(), sf::FloatRect(0, 0, 2000.0f, 2000.0f));
   camera.setTarget(link);
@@ -424,7 +458,9 @@ sf::RenderWindow* WindowManager::getWindow(){
 
 void WindowManager::manageEvents(){
   sf::Event event;
+
   while (getWindow()->pollEvent(event)){
+
       eventMgr->notifyAll(event);
       notifyObjects(event);
 
@@ -516,7 +552,7 @@ void WindowManager::checkCollisions(){
                         // based on player position
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
     sf::FloatRect itemArea = _itemsToDisplay[i] -> getBounds();
-    MapLayer *currentLevelLayer = gameMap.m_layers[currentLayer];
+    MapLayer *currentLevelLayer = gameMap.m_layers[_itemsToDisplay[i] -> m_zLayer];
     for(auto item : currentLevelLayer->m_collidableItems){
       if(itemArea.intersects(*item)){
         _itemsToDisplay[i]->onCollision();
@@ -644,6 +680,19 @@ sf::Text MenuItem::getLabel(){
 void MenuItem::onclick(){
   std::cout << "You pressed on item " << this->_menuText << "\n";
   WindowManager * wm = WindowManager::getManager();
+  if( wm->m_gameState == GameState::OnActionMenu){
+    //making checks on the possible triggerable Events
+    std::cout << "available event number " << wm->m_actionMenu.m_loadedEvents.size() << "\n";
+    PActionType aType = PActionType::None;
+    if(this->_menuText == "Push"){
+      aType = PActionType::Push;
+    }
+    for(auto lEvent : wm->m_actionMenu.m_loadedEvents){
+      if(lEvent.action.type == aType){
+        wm->eventMgr->fireEvent(lEvent);
+      }
+    }
+  }
   //std::cout << "Here we go again";
   if(_isRoot){
     //std::cout << "clearing the  displayed items";
@@ -695,6 +744,9 @@ int main(int argc, char const *argv[]) {
     music.openFromFile("./assets/music/bg_music.wav");
     music.play();
 
+    sf::Cursor cursor;
+    if (cursor.loadFromSystem(sf::Cursor::Hand))
+      wManager->getWindow()->setMouseCursor(cursor);
     //wManager->getWindow()->setFramerateLimit(60);
     while (wManager->getWindow()->isOpen())
     {
