@@ -31,7 +31,8 @@ enum GameState { Starting,
                   Pause,
                   OnActionMenu,
                   OnMenu,
-                  OnDialog
+                  OnDialog,
+                  Exiting
                   };
 
 enum TriggerType {

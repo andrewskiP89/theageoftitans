@@ -374,27 +374,25 @@ sf::Vector2f  PDObject::getPosition(){ return sf::Vector2f(0.0f, 0.0f);}
 
 bool WindowManager::init(){
   // initing the menu
-  m_gameState = GameState::Playing; // default will be set to Starting at one point
+  m_gameState = GameState::Starting; // the moment has come
 
   load_assets();
 
   eventMgr = new EventManager();
-  /*MenuContainer *menu = new MenuContainer();
-  MenuItem *file = new MenuItem("File", true);
-  menu->addMenuItem(file);
-  MenuItem *edit = new MenuItem("Edit", true);
-  menu->addMenuItem(edit);
-  MenuItem *view = new MenuItem("View", true);
-  menu->addMenuItem(view);
 
+  // LOADING INITIAL MENU - START
+  MenuItem *newGame = new MenuItem(NEW_GAME_LABEL, true);
+  m_startingMenu.addMenuItem(newGame);
+  MenuItem *gameLoad = new MenuItem(CONTINUE_LABEL, true);
+  m_startingMenu.addMenuItem(gameLoad);
+  MenuItem *quit = new MenuItem(QUIT_LABEL, true);
+  m_startingMenu.addMenuItem(quit);
 
-  MenuDropdown *dropdown = new MenuDropdown(*file);
-  MenuItem *createFile = new MenuItem("New File");
-  dropdown->addMenuItem(createFile);
-  MenuItem *openFile = new MenuItem("Open File");
-  dropdown->addMenuItem(openFile);
+  for(auto item : m_startingMenu.getClickables()){
+    eventMgr->registerItem(item);
+  }
 
-  file->linkDropdown(dropdown);*/
+  // LOADING INITIAL MENU - END
 
   gameMap.load(TILE_SET, sf::Vector2u(16, 16));
   gameMap.addLayer(LAYER_1, 50, 50);
@@ -470,7 +468,10 @@ void WindowManager::manageEvents(){
       if(m_gameState == GameState::OnActionMenu){
         m_actionMenu.onEvent(event);
       }
-      if (event.type == sf::Event::Closed)
+      if(m_gameState == GameState::Starting){
+        //
+      }
+      if (m_gameState == GameState::Exiting || event.type == sf::Event::Closed)
           getWindow()->close();
   }
   // managing custom app events
@@ -491,29 +492,33 @@ void WindowManager::manageEvents(){
 void WindowManager::draw(){
     _window->clear();
 
-    _window->setView(camera.view);
+    if(m_gameState == GameState::Starting){
+      m_startingMenu.draw(_window);
+    }else{
+      _window->setView(camera.view);
 
-    std::vector<MapLayer*> levelLayers = gameMap.m_layers;
-    if(levelLayers.size() > 0){
-      _window->draw(*levelLayers[0]);
-    }
-
-    for(int i = 0; i < _itemsToDisplay.size(); i ++){
-      _itemsToDisplay[i]->draw(_window);
-    }
-    if(levelLayers.size() > 1){
-      for(int i = 1; i < levelLayers.size(); i ++){
-        _window->draw(*levelLayers[i]);
+      std::vector<MapLayer*> levelLayers = gameMap.m_layers;
+      if(levelLayers.size() > 0){
+        _window->draw(*levelLayers[0]);
       }
-    }
-    if(m_gameState == GameState::OnDialog){
-      m_textContainer.draw(_window);
-    }else if(m_gameState == GameState::OnActionMenu){
-      // draw menu
-      m_actionMenu.draw(_window);
-      /*for(int i = 0; i < _windowItems.size(); i ++){
-        _windowItems[i]->draw(_window);
-      }*/
+
+      for(int i = 0; i < _itemsToDisplay.size(); i ++){
+        _itemsToDisplay[i]->draw(_window);
+      }
+      if(levelLayers.size() > 1){
+        for(int i = 1; i < levelLayers.size(); i ++){
+          _window->draw(*levelLayers[i]);
+        }
+      }
+      if(m_gameState == GameState::OnDialog){
+        m_textContainer.draw(_window);
+      }else if(m_gameState == GameState::OnActionMenu){
+        // draw menu
+        m_actionMenu.draw(_window);
+        /*for(int i = 0; i < _windowItems.size(); i ++){
+          _windowItems[i]->draw(_window);
+        }*/
+      }
     }
     _window->display();
 }
@@ -524,27 +529,23 @@ void WindowManager::setScenery(Scenery * sc){
 void WindowManager::update(){
   float deltas = clock.getElapsedTime().asSeconds();
   clock.restart();
-  //m_musicMgr.play();
-  //std::cout << "Printing frame rate " << 1 / deltas << " \n";
-  if(m_gameState == GameState::OnDialog || m_gameState == GameState::Playing){
-    for(int i = 0; i < _itemsToDisplay.size(); i ++){
-      _itemsToDisplay[i]->update(deltas);
+  if(m_gameState != GameState::Starting){
+    if(m_gameState == GameState::OnDialog || m_gameState == GameState::Playing){
+      for(int i = 0; i < _itemsToDisplay.size(); i ++){
+        _itemsToDisplay[i]->update(deltas);
+      }
+    }
+    camera.updateCamera(sf::FloatRect(0, 0, scenary->mapSize.x, scenary->mapSize.y));
+    m_actionMenu.setCamera(camera);
+
+    if(m_gameState == GameState::OnActionMenu){
+      m_actionMenu.update(deltas);
+    }
+    if(m_gameState == GameState::OnDialog){
+      m_textContainer.update(deltas);
     }
   }
 
-  camera.updateCamera(sf::FloatRect(0, 0, scenary->mapSize.x, scenary->mapSize.y));
-  m_actionMenu.setCamera(camera);
-
-  if(m_gameState == GameState::OnActionMenu){
-
-    m_actionMenu.update(deltas);
-    /*for(auto menuItem : _windowItems){
-      menuItem->update(deltas);
-    }*/
-  }
-  if(m_gameState == GameState::OnDialog){
-    m_textContainer.update(deltas);
-  }
 }
 
 void WindowManager::checkCollisions(){
@@ -692,6 +693,14 @@ void MenuItem::onclick(){
         wm->eventMgr->fireEvent(lEvent);
       }
     }
+  }else if(wm->m_gameState == GameState::Starting){
+    if(this->_menuText == NEW_GAME_LABEL)
+      EventManager::changeGameState(GameState::Playing);
+    else if(this->_menuText == CONTINUE_LABEL)
+      std::cout << "Continuing the game \n"; // @TODO
+    else if(this->_menuText == QUIT_LABEL)
+      EventManager::changeGameState(GameState::Exiting);
+
   }
   //std::cout << "Here we go again";
   if(_isRoot){

@@ -63,3 +63,26 @@ void ActionMenu::onEvent(sf::Event event){
     }
   }
 }
+
+///////////// STARTING MENU ////////////////
+
+StartingMenu::StartingMenu(){
+  _menuBar = new sf::RectangleShape(sf::Vector2f(DEFAULT_WIDTH, DEFAULT_HEIGHT ));
+  _menuBar -> setFillColor(sf::Color::Black);
+  _menuBar -> setOutlineColor(sf::Color::White);
+  _menuBar -> setOutlineThickness(5.0f);
+  _menuBar-> setPosition(0.0f, 0.0f);
+}
+
+void StartingMenu::addMenuItem(MenuItem * item) {
+
+  int menuLength = _menuItems.size();
+  sf::Vector2f menuSize = _menuBar->getSize();
+  sf::Vector2f menuPosition = _menuBar->getPosition();
+  sf::FloatRect bound = item->getLabel().getLocalBounds();
+
+  item-> setPosition(DEFAULT_WIDTH / 2 - bound.width / 2, ( DEFAULT_HEIGHT / 3 - bound.height / 2 ) + menuLength * (bound.height + 50.0f));
+
+  //item->setPosition(90.0f * menuLength, 0.0f);
+  _menuItems.push_back(item);
+}

@@ -5,6 +5,10 @@
 #ifndef MENU_H
 #define MENU_H
 
+#define NEW_GAME_LABEL "New Game"
+#define CONTINUE_LABEL "Continue"
+#define QUIT_LABEL "Quit"
+
 enum ActionType { show_menu, execute};
 
 class MenuItem : public Clickable{
@@ -49,6 +53,14 @@ private:
   bool m_cameraInited;
   sf::Vector2f m_oldPosition;
   Camera m_camera;
+};
+
+class StartingMenu : public MenuContainer{
+public:
+  StartingMenu();
+  void addMenuItem(MenuItem* item) override;
+  //void update(float deltas) override;
+  //void onEvent(sf::Event event) override;
 };
 
 class MenuDropdown :  public PDObject{

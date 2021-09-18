@@ -52,6 +52,7 @@ public:
   GameState m_gameState;
   TextContainer m_textContainer;
   ActionMenu m_actionMenu;
+  StartingMenu m_startingMenu;
   MusicManager m_musicMgr;
   void setScenery(Scenery *sc);
   sf::Clock clock;
