@@ -159,6 +159,14 @@ public:
     m_scaleFactor =  5.0f;
     return true;
   }
+
+  bool loadWorld(const std::string& tileSet, sf::Vector2u tileSize){
+    if (!m_worldTileset.loadFromFile(tileSet))
+            return false;
+    m_worldTileSize = tileSize;
+    return true;
+  }
+
   void addLayer(const std::string& mapFile, unsigned int width, unsigned int height){
     MapLayer *ml = new MapLayer(m_layers.size());
     //float scaleFactor = 5.0f;
@@ -172,5 +180,7 @@ private:
   float m_scaleFactor;
   sf::Vector2u m_tileSize;
   sf::Texture m_tileset;
+  sf::Texture m_worldTileset;
+  sf::Vector2u m_worldTileSize;
 };
 #endif

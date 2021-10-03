@@ -18,10 +18,9 @@ private:
   ActionType _atype;
   bool _isRoot;
 public:
-  sf::Text _label;
   sf::FloatRect m_clickableArea;
   void *_md;
-  sf::Text getLabel();
+  sf::Text getLabel() override;
   void linkDropdown(void *md);
   void onclick();
   sf::FloatRect getClickableArea();
@@ -32,13 +31,34 @@ public:
 class MenuContainer : public PDObject{
 protected:
   sf::RectangleShape *_menuBar;
-  std::vector<MenuItem*> _menuItems;
+  std::vector<Clickable*> _menuItems;
 public:
   MenuContainer ();
   virtual void addMenuItem(MenuItem * item);
   virtual void draw(sf::RenderWindow * window);
-  std::vector<MenuItem*> getClickables();
+  std::vector<Clickable*> getClickables();
   ~MenuContainer ();
+};
+
+class InventoryItem : public Clickable{
+private:
+  AppEvent m_action;
+  sf::Sprite *m_sprite;
+public:
+  InventoryItem(sf::Sprite * sprite, const std::string labelString);
+  sf::FloatRect m_clickableArea;
+  void onClick();
+  sf::FloatRect getClickableArea();
+  void setPosition(float x, float y);
+};
+
+class Inventory : public MenuContainer{
+protected:
+  std::vector<Clickable*> _menuItems;
+public:
+  void addItem(Clickable *item);
+  void removeItem(Clickable *item);
+  std::vector<Clickable*> getClickables();
 };
 
 class ActionMenu : public MenuContainer{
@@ -67,12 +87,12 @@ class MenuDropdown :  public PDObject{
 private:
   sf::Vector2f _anchorPoint;
   sf::RectangleShape *_menuBar;
-  std::vector<MenuItem*> _menuItems;
+  std::vector<Clickable*> _menuItems;
 public:
   MenuDropdown (MenuItem &item);
   void addMenuItem(MenuItem * item);
   void draw(sf::RenderWindow * window);
-  std::vector<MenuItem*> getClickables();
+  std::vector<Clickable*> getClickables();
   ~MenuDropdown ();
 };
 

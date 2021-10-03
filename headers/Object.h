@@ -152,12 +152,13 @@ public:
   sf::Sprite map;
 };
 
-class Clickable {
-
+class Clickable {  
 public:
+  sf::Text _label;
   bool m_isLocalItem = true;
   bool const isLocal();
   Clickable();
+  virtual sf::Text getLabel();
   virtual void onclick();
   virtual sf::FloatRect getClickableArea();
 };

@@ -297,6 +297,10 @@ bool const Clickable::isLocal(){
   return m_isLocalItem;
 }
 
+sf::Text Clickable::getLabel(){
+  return _label;
+}
+
 /*CLICKABLES - end **/
 
 
@@ -380,7 +384,10 @@ bool WindowManager::init(){
 
   eventMgr = new EventManager();
 
+  // =================================================//
+
   // LOADING INITIAL MENU - START
+
   MenuItem *newGame = new MenuItem(NEW_GAME_LABEL, true);
   m_startingMenu.addMenuItem(newGame);
   MenuItem *gameLoad = new MenuItem(CONTINUE_LABEL, true);
@@ -394,16 +401,20 @@ bool WindowManager::init(){
 
   // LOADING INITIAL MENU - END
 
-  gameMap.load(TILE_SET, sf::Vector2u(16, 16));
-  gameMap.addLayer(LAYER_1, 50, 50);
-  gameMap.addLayer(LAYER_2, 50, 50);
+  // =================================================//
 
-  //add player here
+  // LOADING LEVEL INFO - -start //@TODO This will be moved to a dedicated procedure
+
   Player * link = new Player();
   link->animation.loadAsset(LINK_ASSET, link->sprite, 10, 8);
   link->m_zLayer = 1;
+  //link->move(sf::Vector2f(20.0f, 0.0f));
   m_currentPlayer = link;
   addDrawable(link);
+  
+  gameMap.load(TILE_SET, sf::Vector2u(16, 16));
+  gameMap.addLayer(LAYER_1, 50, 50);
+  gameMap.addLayer(LAYER_2, 50, 50);
 
   // @TODO - the following code needs to be inovked
   // whenever the currentPlayer level changes
@@ -417,7 +428,12 @@ bool WindowManager::init(){
   camera.initCamera(_window->getSize(), sf::FloatRect(0, 0, 2000.0f, 2000.0f));
   camera.setTarget(link);
 
-  //ActionMenu *menu = new ActionMenu();
+  // LOADING LEVEL INFO - -end
+
+  // =================================================//
+
+  // LOADING - ACTION MENU AND INVENTORY - start
+
   ActionMenu menu;
   MenuItem *push = new MenuItem("Push", true);
   menu.addMenuItem(push);
@@ -428,18 +444,19 @@ bool WindowManager::init(){
   MenuItem *use = new MenuItem("Use", true);
   menu.addMenuItem(use);
 
-  //menu.setCamera(camera);
   m_actionMenu = menu;
-  //_windowItems.push_back(menu);
-  //_windowItems.push_back(dropdown);
 
   for(auto item : menu.getClickables()){
     eventMgr->registerItem(item);
   }
 
+  // LOADING - ACTION MENU AND INVENTORY - end
+
   //m_musicMgr.loadTrack();
 
+  // LOADING MESSAGES ENGINE - start
   m_textContainer.init(&camera, DEFAULT_WIDTH, DEFAULT_HEIGHT * 0.2f);
+  // LOADING MESSAGES ENGINE - end
   return true;
 }
 
@@ -619,7 +636,7 @@ void MenuContainer::draw(sf::RenderWindow * window){
   }
 }
 
-std::vector<MenuItem*> MenuContainer::getClickables(){
+std::vector<Clickable*> MenuContainer::getClickables(){
   return _menuItems;
 }
 // MenuDropdown
@@ -653,7 +670,7 @@ void MenuDropdown::draw(sf::RenderWindow * window){
   }
 }
 
-std::vector<MenuItem*> MenuDropdown::getClickables(){
+std::vector<Clickable*> MenuDropdown::getClickables(){
   return _menuItems;
 }
 // MENU ITEMS
@@ -701,11 +718,6 @@ void MenuItem::onclick(){
     else if(this->_menuText == QUIT_LABEL)
       EventManager::changeGameState(GameState::Exiting);
 
-  }
-  //std::cout << "Here we go again";
-  if(_isRoot){
-    //std::cout << "clearing the  displayed items";
-    //wm->clearItems();
   }
 
   if(_atype == ActionType::show_menu){

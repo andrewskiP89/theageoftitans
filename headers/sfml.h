@@ -2,6 +2,7 @@
 #define SFML_H
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
+#include "./json.hpp"
 //#include <SFML/Cursor.hpp>
 #include <iostream>
 #endif
