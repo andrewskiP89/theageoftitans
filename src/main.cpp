@@ -411,19 +411,29 @@ bool WindowManager::init(){
   //link->move(sf::Vector2f(20.0f, 0.0f));
   m_currentPlayer = link;
   addDrawable(link);
-  
-  gameMap.load(TILE_SET, sf::Vector2u(16, 16));
-  gameMap.addLayer(LAYER_1, 50, 50);
-  gameMap.addLayer(LAYER_2, 50, 50);
+
+  //gameMap.load(TILE_SET, sf::Vector2u(16, 16));
+  gameMap.loadLevel(1);
+  //gameMap.addLayer(LAYER_1, 50, 50);
+  //gameMap.addLayer(LAYER_2, 50, 50);
 
   // @TODO - the following code needs to be inovked
   // whenever the currentPlayer level changes
   size_t playableLayer = m_currentPlayer-> m_zLayer;
-  MapLayer *currentLevelLayer = gameMap.m_layers[playableLayer];
+  if(gameMap.m_layerMap.find(playableLayer) != gameMap.m_layerMap.end()){
+    for(auto currentLevelLayer : gameMap.m_layerMap[playableLayer]){
+      for(auto item : currentLevelLayer->m_worldItems){
+          std::cout << "Registering world item \n";
+          eventMgr->registerItem(item);
+      }
+    }
+  }
+  // following commented code has been deprecated
+  /*MapLayer *currentLevelLayer = gameMap.m_layers[playableLayer];
   for(auto item : currentLevelLayer->m_worldItems){
       std::cout << "Registering world item \n";
       eventMgr->registerItem(item);
-  }
+  }*/
 
   camera.initCamera(_window->getSize(), sf::FloatRect(0, 0, 2000.0f, 2000.0f));
   camera.setTarget(link);
@@ -514,11 +524,32 @@ void WindowManager::draw(){
     }else{
       _window->setView(camera.view);
 
-      std::vector<MapLayer*> levelLayers = gameMap.m_layers;
+      size_t currentLayer = m_currentPlayer->m_zLayer;
+
+      for(size_t l = 0; l < currentLayer; l++){
+        if(gameMap.m_layerMap.find(l) != gameMap.m_layerMap.end()){
+          std::vector<MapLayer*> levelLayers = gameMap.m_layerMap[l];
+          for(auto layer : levelLayers){
+            _window->draw(*layer);
+          }
+        }
+      }
+      for(int i = 0; i < _itemsToDisplay.size(); i ++){
+        _itemsToDisplay[i]->draw(_window);
+      }
+      for(size_t l = currentLayer; l < gameMap.m_layerMap.size(); l++){
+        if(gameMap.m_layerMap.find(l) != gameMap.m_layerMap.end()){
+          std::vector<MapLayer*> levelLayers = gameMap.m_layerMap[l];
+          for(auto layer : levelLayers){
+            _window->draw(*layer);
+          }
+        }
+      }
+      // following commented code has been deprecated
+      /*std::vector<MapLayer*> levelLayers = gameMap.m_layers;
       if(levelLayers.size() > 0){
         _window->draw(*levelLayers[0]);
       }
-
       for(int i = 0; i < _itemsToDisplay.size(); i ++){
         _itemsToDisplay[i]->draw(_window);
       }
@@ -526,7 +557,7 @@ void WindowManager::draw(){
         for(int i = 1; i < levelLayers.size(); i ++){
           _window->draw(*levelLayers[i]);
         }
-      }
+      }*/
       if(m_gameState == GameState::OnDialog){
         m_textContainer.draw(_window);
       }else if(m_gameState == GameState::OnActionMenu){
@@ -566,11 +597,34 @@ void WindowManager::update(){
 }
 
 void WindowManager::checkCollisions(){
-  int currentLayer = 1; // this info needs to be calculated dynamically
-                        // based on player position
+
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
     sf::FloatRect itemArea = _itemsToDisplay[i] -> getBounds();
-    MapLayer *currentLevelLayer = gameMap.m_layers[_itemsToDisplay[i] -> m_zLayer];
+
+    if(gameMap.m_layerMap.find(_itemsToDisplay[i] -> m_zLayer) != gameMap.m_layerMap.end()){
+      for(auto currentLevelLayer : gameMap.m_layerMap[_itemsToDisplay[i] -> m_zLayer]){
+        for(auto item : currentLevelLayer->m_collidableItems){
+          if(itemArea.intersects(*item)){
+            _itemsToDisplay[i]->onCollision();
+          }
+        }
+        for(auto item  : currentLevelLayer-> m_eventAreas){
+          if(itemArea.intersects(*item.first)){
+            for(auto event : item.second){
+              //AppEvent *eventToFire = new AppEvent(event);
+              //eventToFire->fire();
+              eventMgr->fireEvent(event);
+              //eventToFire->type = EventType::ShowMessage;
+              //std::cout << "Registered event having type : " << event.type << "\n";
+            }
+          }else{
+            eventMgr->clearEvents(item.second);
+          }
+        }
+      }
+    }
+    // following commented code has been deprecated
+    /*MapLayer *currentLevelLayer = gameMap.m_layers[_itemsToDisplay[i] -> m_zLayer];
     for(auto item : currentLevelLayer->m_collidableItems){
       if(itemArea.intersects(*item)){
         _itemsToDisplay[i]->onCollision();
@@ -578,10 +632,9 @@ void WindowManager::checkCollisions(){
     }
     for(auto item  : currentLevelLayer-> m_eventAreas){
       if(itemArea.intersects(*item.first)){
-
         for(auto event : item.second){
-          /*AppEvent *eventToFire = new AppEvent(event);
-          eventToFire->fire();*/
+          //AppEvent *eventToFire = new AppEvent(event);
+          //eventToFire->fire();
           eventMgr->fireEvent(event);
           //eventToFire->type = EventType::ShowMessage;
           //std::cout << "Registered event having type : " << event.type << "\n";
@@ -589,7 +642,7 @@ void WindowManager::checkCollisions(){
       }else{
         eventMgr->clearEvents(item.second);
       }
-    }
+    }*/
   }
 }
 
