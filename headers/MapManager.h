@@ -55,7 +55,7 @@ private:
 class MapLayer : public sf::Drawable, public sf::Transformable
 {
 public:
-  MapLayer(uint8_t currentLayer);
+  MapLayer(uint8_t currentLayer, size_t layerNumber);
   void setTileset(sf::Texture * tileSet, sf::Vector2u tileSize); // to be deprecated
   void setTileset(const TileSet& tileSet); // new method
   void generateLayer(const std::string& mapFile, const unsigned int width, const unsigned int height, const float mapScale); // to be deprecated
@@ -69,6 +69,7 @@ private:
   sf::Vector2u m_tileSize;
   sf::VertexArray m_vertices;
   uint8_t m_currentLayer;
+  size_t m_layerNumber;
   bool m_isCollidable;
   Camera *camera; // to manage rendering optimization
   sf::Texture * m_tileset;
@@ -86,6 +87,7 @@ public:
   std::map<uint8_t, std::vector<MapLayer*>> m_layerMap;
 private:
   float m_scaleFactor;
+  size_t m_lCounter;
   sf::Vector2u m_tileSize;
   sf::Texture m_tileset;
   std::map<std::string, TileSet*> m_tilesetMap;

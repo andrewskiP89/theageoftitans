@@ -186,6 +186,14 @@ void Player::update(float deltas){
   //std::cout << "Printing speed x " << speed.x << "\t y " << speed.y << "\n";
 }
 
+void Player::move(sf::Vector2f delta){
+  sprite.move(delta.x, delta.y);
+  m_position = sprite.getPosition();
+  m_oldPosition = m_position;
+}
+
+
+
 void Player::draw(sf::RenderWindow * window){
 
   window -> draw(sprite);
@@ -279,10 +287,10 @@ sf::Vector2f Player::getPosition(){
 
 /*CLICKABLES - start **/
 
-Clickable::Clickable()
+/*Clickable::Clickable()
 {
 
-}
+}*/
 void Clickable::onclick()
 {
 
@@ -311,10 +319,10 @@ void EventManager::notifyAll(const sf::Event &event){
     {
         if (event.mouseButton.button == sf::Mouse::Left)
         {
-            std::cout << "the left button was pressed" << std::endl;
-            std::cout << "mouse x: " << event.mouseButton.x << std::endl;
-            std::cout << "mouse y: " << event.mouseButton.y << std::endl;
-            std::cout << "Subrscribers size : " << _clickSubscribers.size() << std::endl;
+            //std::cout << "the left button was pressed" << std::endl;
+            //std::cout << "mouse x: " << event.mouseButton.x << std::endl;
+            //std::cout << "mouse y: " << event.mouseButton.y << std::endl;
+            //std::cout << "Subscribers size : " << _clickSubscribers.size() << std::endl;
             // Using a for loop with iterator
 
             for(int i = 0; i < _clickSubscribers.size(); i++){
@@ -326,8 +334,8 @@ void EventManager::notifyAll(const sf::Event &event){
               sf::Vector2f cameraCenter = camera.getView().getCenter();
               sf::Vector2f cameraTranslation(cameraCenter.x - DEFAULT_WIDTH / 2, cameraCenter.y - DEFAULT_HEIGHT / 2);
               sf::Vector2f globalMouse = localMouse + cameraTranslation;
-              std::cout << "Global mouse x: " << globalMouse.x << std::endl;
-              std::cout << "Global mouse y: " << globalMouse.y << std::endl;
+              //std::cout << "Global mouse x: " << globalMouse.x << std::endl;
+              //std::cout << "Global mouse y: " << globalMouse.y << std::endl;
               if(c->isLocal()){
                 if(carea.contains(sf::Vector2f(localMouse.x, localMouse.y))){
                   std::cout << "clicking on item \n";
@@ -407,6 +415,7 @@ bool WindowManager::init(){
 
   Player * link = new Player();
   link->animation.loadAsset(LINK_ASSET, link->sprite, 10, 8);
+  link->move(sf::Vector2f(250.0f, 300.0f));
   link->m_zLayer = 1;
   //link->move(sf::Vector2f(20.0f, 0.0f));
   m_currentPlayer = link;
@@ -449,7 +458,7 @@ bool WindowManager::init(){
   menu.addMenuItem(push);
   MenuItem *pull = new MenuItem("Pull", true);
   menu.addMenuItem(pull);
-  MenuItem *take = new MenuItem("Take", true);
+  MenuItem *take = new MenuItem("Pick Up", true);
   menu.addMenuItem(take);
   MenuItem *use = new MenuItem("Use", true);
   menu.addMenuItem(use);
@@ -513,6 +522,14 @@ void WindowManager::manageEvents(){
       m_gameState = GameState::OnDialog;
       m_textContainer.setDialog(appEvent.dialog);
     }
+    // pick an item event
+    if(appEvent.type == EventType::PickUpItem){
+      if(appEvent.source != nullptr){
+        ItemSource *item = (ItemSource *) appEvent.source;
+        m_inventory.addItem(item);
+        std::cout << "Adding item to the player inventory \n";
+      }
+    }
   }
 }
 
@@ -563,6 +580,7 @@ void WindowManager::draw(){
       }else if(m_gameState == GameState::OnActionMenu){
         // draw menu
         m_actionMenu.draw(_window);
+        m_inventory.draw(_window);
         /*for(int i = 0; i < _windowItems.size(); i ++){
           _windowItems[i]->draw(_window);
         }*/
@@ -587,7 +605,9 @@ void WindowManager::update(){
     m_actionMenu.setCamera(camera);
 
     if(m_gameState == GameState::OnActionMenu){
+      m_inventory.setCamera(&camera);
       m_actionMenu.update(deltas);
+      m_inventory.update();
     }
     if(m_gameState == GameState::OnDialog){
       m_textContainer.update(deltas);
@@ -755,11 +775,22 @@ void MenuItem::onclick(){
     //making checks on the possible triggerable Events
     std::cout << "available event number " << wm->m_actionMenu.m_loadedEvents.size() << "\n";
     PActionType aType = PActionType::None;
+
     if(this->_menuText == "Push"){
       aType = PActionType::Push;
+    }else if(this->_menuText == "Pull"){
+      aType = PActionType::Pull;
+    }else if(this->_menuText == "Pick Up"){
+      aType = PActionType::PickUp;
+    }else if(this->_menuText == "Use"){
+      aType = PActionType::Use;
     }
+    std::cout << "Priting selected aType " << aType << "\n";
+
     for(auto lEvent : wm->m_actionMenu.m_loadedEvents){
+      std::cout << "Priting lEvent type" << lEvent.action.type << "\n";
       if(lEvent.action.type == aType){
+        std::cout << "Firing event for " << this->_menuText << "\n";
         wm->eventMgr->fireEvent(lEvent);
       }
     }

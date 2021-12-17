@@ -2,8 +2,9 @@
 #include "../headers/WindowManager.h"
 
 
-MapLayer::MapLayer(uint8_t currentLayer){
+MapLayer::MapLayer(uint8_t currentLayer, size_t layerNumber){
   m_currentLayer = currentLayer;
+  m_layerNumber = layerNumber;
 }
 void MapLayer::setTileset(sf::Texture * tileSet, sf::Vector2u tileSize){
   m_tileSize = tileSize;
@@ -45,6 +46,13 @@ void MapLayer::generateLayer(const LayerData& data, const float mapScale){
     quad[2].position = sf::Vector2f((column + 1) * m_tilesetNew.size.x, (row + 1) * m_tilesetNew.size.y);
     quad[3].position = sf::Vector2f(column * m_tilesetNew.size.x, (row + 1) * m_tilesetNew.size.y);
 
+    // define its 4 texture coordinates
+    quad[0].texCoords = sf::Vector2f(tu * m_tilesetNew.size.x, tv * m_tilesetNew.size.y);
+    quad[1].texCoords = sf::Vector2f((tu + 1) * m_tilesetNew.size.x, tv * m_tilesetNew.size.y);
+    quad[2].texCoords = sf::Vector2f((tu + 1) * m_tilesetNew.size.x, (tv + 1) * m_tilesetNew.size.y);
+    quad[3].texCoords = sf::Vector2f(tu * m_tilesetNew.size.x, (tv + 1) * m_tilesetNew.size.y);
+
+
     unsigned int tolerance = 50;
     bool isCollidable = false, isCollectable = false;
     if(m_tilesetNew.tiles.find(tileNumber) != m_tilesetNew.tiles.end()){
@@ -52,13 +60,16 @@ void MapLayer::generateLayer(const LayerData& data, const float mapScale){
       isCollectable = m_tilesetNew.tiles[tileNumber].isCollectable;
     }
 
+
     if(isCollidable){
       sf::FloatRect *r  = new sf::FloatRect(column * m_tilesetNew.size.x * mapScale + tolerance,
                                             row * m_tilesetNew.size.y * mapScale + tolerance,
                                             m_tilesetNew.size.x * mapScale - (2 * tolerance),
                                             m_tilesetNew.size.y * mapScale - (2 * tolerance));
+
       m_collidableItems.push_back(r);
     }
+
 
     std::map<TriggerType, std::vector<AppEvent>> appEventMap = EventManager::loadEventsFromMap(coordinate, WORLD_EVENT_MAP);
 
@@ -80,15 +91,49 @@ void MapLayer::generateLayer(const LayerData& data, const float mapScale){
       WorldItem *wi = new WorldItem(r);
       wi->m_events = clickEvents;
       m_worldItems.push_back(wi);
+
+      std::cout << "Printing current tile : " << tileNumber << "\n";
+      std::cout << "Printing isCollidable: " << isCollidable << "\n";
+      std::cout << "Printing isCollectable: " << isCollectable << "\n";
+
+    }else if(isCollectable){
+
+      sf::FloatRect *r  = new sf::FloatRect(column * m_tilesetNew.size.x * mapScale,
+                                            row * m_tilesetNew.size.y * mapScale,
+                                            m_tilesetNew.size.x * mapScale,
+                                            m_tilesetNew.size.y * mapScale);
+      WorldItem *wi = new WorldItem(r);
+      // generate pick the item event
+      AppEvent pickItem;
+      pickItem.triggerType = TriggerType::OnClick;
+
+      pickItem.id = std::to_string(tileNumber);
+      PlayerAction action;
+      action.type = PActionType::PickUp;
+
+      pickItem.action = action;
+      pickItem.type = EventType::PickUpItem;
+      // generating the item source to
+      // be able to add the item to the inventory
+      ItemSource *source = new ItemSource();
+      source->quad      = quad;
+    
+      source->vertexIdx = (column + row * data.size.x) * 4;
+      source->layer     = m_layerNumber;
+      source->z_layer   = m_currentLayer;
+      source->size      = m_tilesetNew.size;
+      source->texture   = new sf::Texture(m_tilesetNew.texture);
+
+      pickItem.source = source;
+      std::vector<AppEvent> clickEvents = {pickItem};
+      wi->m_events = clickEvents;
+      m_worldItems.push_back(wi);
     }
-    // define its 4 texture coordinates
-    quad[0].texCoords = sf::Vector2f(tu * m_tilesetNew.size.x, tv * m_tilesetNew.size.y);
-    quad[1].texCoords = sf::Vector2f((tu + 1) * m_tilesetNew.size.x, tv * m_tilesetNew.size.y);
-    quad[2].texCoords = sf::Vector2f((tu + 1) * m_tilesetNew.size.x, (tv + 1) * m_tilesetNew.size.y);
-    quad[3].texCoords = sf::Vector2f(tu * m_tilesetNew.size.x, (tv + 1) * m_tilesetNew.size.y);
+
 
   }
 }
+// @deprecated
 void MapLayer::generateLayer(const std::string& mapFile, const unsigned int width, const unsigned int height, const float mapScale){
 
   std::vector<int> collidableItemsInMap = {
@@ -142,7 +187,6 @@ void MapLayer::generateLayer(const std::string& mapFile, const unsigned int widt
         m_collidableItems.push_back(r);
       }
 
-
       std::map<TriggerType, std::vector<AppEvent>> appEventMap = EventManager::loadEventsFromMap(coordinate, WORLD_EVENT_MAP);
 
       if(appEventMap.find(TriggerType::OnCollision) != appEventMap.end()){
@@ -166,6 +210,7 @@ void MapLayer::generateLayer(const std::string& mapFile, const unsigned int widt
         m_worldItems.push_back(wi);
       }
 
+
       // define its 4 texture coordinates
       quad[0].texCoords = sf::Vector2f(tu * m_tileSize.x, tv * m_tileSize.y);
       quad[1].texCoords = sf::Vector2f((tu + 1) * m_tileSize.x, tv * m_tileSize.y);
@@ -177,7 +222,6 @@ void MapLayer::generateLayer(const std::string& mapFile, const unsigned int widt
   std::cout << "Printing collision event map size: " << m_eventAreas.size() << "\n";
   std::cout << "Printing world clickcable events size: " << m_worldItems.size() << "\n";
 }
-
 
 // ml privates
 void MapLayer::draw(sf::RenderTarget& target, sf::RenderStates states) const{
@@ -198,6 +242,7 @@ bool LevelMap::load(const std::string& tileSet, sf::Vector2u tileSize){
           return false;
   m_tileSize = tileSize;
   m_scaleFactor =  5.0f;
+  m_lCounter = 0;
   return true;
 }
 
@@ -301,7 +346,11 @@ bool LevelMap::loadLevel(const size_t levelNumber){
   return false;
 }
 void LevelMap::addLayer(const LayerData& data, const TileSet& tileSet, uint8_t& currentLayer){
-  MapLayer *ml = new MapLayer(currentLayer);
+
+  size_t lNumber = m_layerMap.find(currentLayer) != m_layerMap.end() ?
+                      m_layerMap[currentLayer].size() : 0;
+
+  MapLayer *ml = new MapLayer(currentLayer, lNumber);
   // add logic to correctly generate the layer
 
   ml->scale(m_scaleFactor, m_scaleFactor);
@@ -314,7 +363,7 @@ void LevelMap::addLayer(const LayerData& data, const TileSet& tileSet, uint8_t& 
 }
 
 void LevelMap::addLayer(const std::string& mapFile, unsigned int width, unsigned int height){
-  MapLayer *ml = new MapLayer(m_layers.size());
+  MapLayer *ml = new MapLayer(m_layers.size(), m_layers.size());
   //float scaleFactor = 5.0f;
   ml->scale(m_scaleFactor, m_scaleFactor);
   ml->setTileset(&m_tileset, m_tileSize);
@@ -330,7 +379,7 @@ WorldItem::WorldItem(sf::FloatRect *area){
 }
 
 sf::FloatRect WorldItem::getClickableArea(){
-  std::cout << m_area->top << "\t" << m_area->left + m_area->width << "\t" << m_area->top + m_area->height << "\t" << m_area->left << "\n";
+  //std::cout << m_area->top << "\t" << m_area->left + m_area->width << "\t" << m_area->top + m_area->height << "\t" << m_area->left << "\n";
   return *m_area;
 }
 

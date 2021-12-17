@@ -52,6 +52,7 @@ public:
   GameState m_gameState;
   TextContainer m_textContainer;
   ActionMenu m_actionMenu;
+  Inventory m_inventory;
   StartingMenu m_startingMenu;
   MusicManager m_musicMgr;
   void setScenery(Scenery *sc);

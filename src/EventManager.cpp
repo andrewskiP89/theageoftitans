@@ -8,6 +8,10 @@ std::set<std::string> EventManager::m_fireEventIds;
 
 void AppEvent::fire(){
   if(type == EventType::ShowMessage || singleTime){
+    std::cout << "inserting single time event for current id " << id << "\n";
+    for(auto exId : EventManager::m_fireEventIds)
+      std::cout << "Existing id " << exId << "\n";
+
     if(EventManager::m_fireEventIds.size() == 0 ||
           EventManager::m_fireEventIds.find(id) == EventManager::m_fireEventIds.end()){
       std::cout << "Triggering single time event " << id << "\n";
@@ -15,9 +19,10 @@ void AppEvent::fire(){
       EventManager::m_fireEventIds.insert(id);
     }
   }else{
+    std::cout << "inserting general event \n";
     EventManager::m_eventQueue.insert(EventManager::m_eventQueue.begin(), this);
   }
-
+  std::cout << "Event queue size " << EventManager::m_eventQueue.size() << "\n";
 }
 
 bool EventManager::pollEvent(AppEvent &event){

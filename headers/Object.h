@@ -26,6 +26,8 @@
 #define APP_FONT "./assets/fonts/dos_font.ttf"
 #define APP_FONT_SIZE 35
 
+#define WIDTH 0
+#define HEIGHT 1
 enum GameState { Starting,
                   Playing,
                   Pause,
@@ -44,7 +46,8 @@ enum EventType{
   OnAction,
   GameStateChange,
   ShowMessage,
-  TaskCompleted
+  TaskCompleted,
+  PickUpItem // move world item to the inventory
 };
 enum PActionType{
   Pull,
@@ -58,6 +61,16 @@ enum PActionType{
 struct UsableItem{
   uint16_t id;
 };
+
+struct ItemSource {
+  sf::Vertex * quad;
+  sf::Texture *texture; // @TODO optimize it. Avoid having texture as a mem var
+  uint16_t vertexIdx;
+  size_t z_layer;
+  size_t layer;
+  sf::Vector2u size;
+};
+
 struct Inventary{
   std::vector<UsableItem*> items;
 };
@@ -77,9 +90,10 @@ struct Message{
 struct Dialog{
   std::vector<Message> messages;
 };
+
 struct AppEvent{
   std::string id;
-  void *source;
+  void *source = nullptr;
   GameState targetState;
   int requiredTask;
   uint16_t taskCompleted;
@@ -152,15 +166,16 @@ public:
   sf::Sprite map;
 };
 
-class Clickable {  
+class Clickable {
 public:
   sf::Text _label;
   bool m_isLocalItem = true;
   bool const isLocal();
-  Clickable();
+  //Clickable();
   virtual sf::Text getLabel();
   virtual void onclick();
   virtual sf::FloatRect getClickableArea();
+  virtual void move(sf::Vector2f delta);
 };
 
 class Animation{
