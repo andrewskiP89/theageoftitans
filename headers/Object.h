@@ -1,9 +1,118 @@
 #include "sfml.h"
+
 #ifndef OBJECT_H
 #define OBJECT_H
 
+// @TODO all definitions to be moved to a dedicated header
+#define PB_DASHBOARD_TITLE "The age of Titans"
+#define DEFAULT_WIDTH 1600
+#define DEFAULT_HEIGHT 900
+#define MENU_FONT_SIZE 35
+
+#define SRC_FLDR "./assets/fonts/dos_font.ttf"
+#define LINK_SPEED 4.0e2f
+#define ANIMATION_PERIOD 0.7e-1f
+#define LINK_ASSET "./assets/imgs/link_new.png"
+
+#define MAP_ASSET "./assets/imgs/worldmap.png"
+
+#define TILE_SET "./assets/imgs/titanstileset.png"
+//#define LAYER_1 "./assets/levelmap/titans_level1_layer1.csv"
+//#define LAYER_2 "./assets/levelmap/titans_level1_layer2.csv"
+
+#define LAYER_1 "./assets/levelmap/TAOTMap_LevelGround.csv"
+#define LAYER_2 "./assets/levelmap/TAOTMap_WorldLayer.csv"
+
 #define APP_FONT "./assets/fonts/dos_font.ttf"
 #define APP_FONT_SIZE 35
+
+#define WIDTH 0
+#define HEIGHT 1
+enum GameState { Starting,
+                  Playing,
+                  Pause,
+                  OnActionMenu,
+                  OnMenu,
+                  OnDialog,
+                  Exiting
+                  };
+
+enum TriggerType {
+  OnClick,
+  OnCollision
+};
+
+enum EventType{
+  OnAction,
+  GameStateChange,
+  ShowMessage,
+  TaskCompleted,
+  PickUpItem // move world item to the inventory
+};
+enum PActionType{
+  Pull,
+  Push,
+  Use,
+  PickUp,
+  Throw,
+  Study,
+  None
+};
+struct UsableItem{
+  uint16_t id;
+};
+
+struct ItemSource {
+  sf::Vertex * quad;
+  sf::Texture *texture; // @TODO optimize it. Avoid having texture as a mem var
+  uint16_t vertexIdx;
+  size_t z_layer;
+  size_t layer;
+  sf::Vector2u size;
+};
+
+struct Inventary{
+  std::vector<UsableItem*> items;
+};
+struct PlayerAction{
+  UsableItem *item;
+  PActionType type;
+};
+struct Message{
+  Message(){
+    //sourcePlayer = nullptr;
+    from = "";
+  };
+  std::string content;
+  std::string from;
+  //Player *sourcePlayer;
+};
+struct Dialog{
+  std::vector<Message> messages;
+};
+
+struct AppEvent{
+  std::string id;
+  void *source = nullptr;
+  GameState targetState;
+  int requiredTask;
+  uint16_t taskCompleted;
+  Dialog dialog;
+  PlayerAction action;
+  EventType type;
+  TriggerType triggerType = TriggerType::OnCollision;
+  bool singleTime;
+  void fire();
+};
+
+struct EventCoordinate {
+  uint8_t currentLayer;
+  uint8_t currentLevel;
+
+  uint8_t currentRow;
+  uint8_t currentColumn;
+};
+
 struct Sector {
   float size;
   uint8_t currentColumn;
@@ -21,9 +130,11 @@ enum HOrientation{
 class PDObject{
 public:
   sf::Sprite sprite;
+  size_t m_zLayer;
   virtual void draw(sf::RenderWindow * window);
   virtual void update(float deltas);
-  virtual void onEvent(sf::Event event);
+  virtual void onEvent(sf::Event event); // sf event needs to be updated
+  virtual void onAppEvent(AppEvent event);
   virtual void onCollision();
   sf::FloatRect getBounds(){
     return sprite.getGlobalBounds();
@@ -41,11 +152,10 @@ public:
   void initCamera(sf::Vector2u size, sf::FloatRect horizon);
   void updateCamera(sf::FloatRect horizon);
   sf::View view;
-  sf::View getView(){
+  sf::View getView() const{
     return view;
   }
 };
-
 
 class Scenery : public PDObject{
 public:
@@ -58,10 +168,16 @@ public:
 
 class Clickable {
 public:
-  Clickable();
+  sf::Text _label;
+  bool m_isLocalItem = true;
+  bool const isLocal();
+  //Clickable();
+  virtual sf::Text getLabel();
   virtual void onclick();
   virtual sf::FloatRect getClickableArea();
+  virtual void move(sf::Vector2f delta);
 };
+
 class Animation{
 public:
   Animation();

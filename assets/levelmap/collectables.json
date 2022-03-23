@@ -1,0 +1,26 @@
+{ "columns":16,
+ "image":"collectables.png",
+ "imageheight":352,
+ "imagewidth":256,
+ "margin":0,
+ "name":"collectables",
+ "spacing":0,
+ "tilecount":352,
+ "tiledversion":"1.7.1",
+ "tileheight":16,
+ "tiles":[
+        {
+         "id":10,
+         "properties":[
+                {
+                 "name":"isCollidable",
+                 "type":"bool",
+                 "value":"true"
+                }],
+         "type":"inventoryItem"
+        }],
+ "tilewidth":16,
+ "transparentcolor":"#ff00ff",
+ "type":"tileset",
+ "version":"1.6"
+}

@@ -6,25 +6,9 @@
 //#include "../headers/MapManager.h"
 
 #include <iostream>
+#include <string>
 // MAIN APP CONFIGS
-#define PB_DASHBOARD_TITLE "The age of Titans"
-#define DEFAULT_WIDTH 1600
-#define DEFAULT_HEIGHT 900
-#define MENU_FONT_SIZE 25
 
-#define SRC_FLDR "./assets/fonts/dos_font.ttf"
-#define LINK_SPEED 4.0e2f
-#define ANIMATION_PERIOD 0.7e-1f
-#define LINK_ASSET "./assets/imgs/link_new.png"
-
-#define MAP_ASSET "./assets/imgs/worldmap.png"
-
-#define TILE_SET "./assets/imgs/titanstileset.png"
-//#define LAYER_1 "./assets/levelmap/titans_level1_layer1.csv"
-//#define LAYER_2 "./assets/levelmap/titans_level1_layer2.csv"
-
-#define LAYER_1 "./assets/levelmap/TAOTMap_LevelGround.csv"
-#define LAYER_2 "./assets/levelmap/TAOTMap_WorldLayer.csv"
 
 // managing general font
 sf::Font app_font;
@@ -99,7 +83,7 @@ void Camera::updateCamera(sf::FloatRect horizon){
   if((horizon.top + horizon.height - trgtPos.y) < view.getSize().y / 2){
     position.y = horizon.top + horizon.height  - (view.getSize().y / 2);
   }
-
+  //std::cout << "Camera position  x:" << position.x << "\ty: " << position.y << "\n";
   view.setCenter(position);
 }
 
@@ -202,6 +186,14 @@ void Player::update(float deltas){
   //std::cout << "Printing speed x " << speed.x << "\t y " << speed.y << "\n";
 }
 
+void Player::move(sf::Vector2f delta){
+  sprite.move(delta.x, delta.y);
+  m_position = sprite.getPosition();
+  m_oldPosition = m_position;
+}
+
+
+
 void Player::draw(sf::RenderWindow * window){
 
   window -> draw(sprite);
@@ -233,8 +225,15 @@ void Player::onEvent(sf::Event event){
     speed.y = 0;
   }*/
   bool moving = false;
+  if(event.type == sf::Event::KeyPressed){
+    if(event.key.code == sf::Keyboard::A){
+      AppEvent *tAMenu = new AppEvent();
+      tAMenu->type = EventType::GameStateChange;
+      tAMenu->targetState = GameState::OnActionMenu;
+      tAMenu->fire();
+    }
 
-  if(event.type == sf::Event::KeyReleased){
+  }else if(event.type == sf::Event::KeyReleased){
     if(event.key.code == sf::Keyboard::Up || event.key.code == sf::Keyboard::Down){
       speed.y = 0;
     }
@@ -242,6 +241,7 @@ void Player::onEvent(sf::Event event){
       speed.x = 0;
     }
   }
+
   sf::Keyboard::Key lastKeyPressed;
   if(event.type == sf::Event::KeyPressed){
     lastKeyPressed = event.key.code;
@@ -287,10 +287,10 @@ sf::Vector2f Player::getPosition(){
 
 /*CLICKABLES - start **/
 
-Clickable::Clickable()
+/*Clickable::Clickable()
 {
 
-}
+}*/
 void Clickable::onclick()
 {
 
@@ -299,6 +299,14 @@ void Clickable::onclick()
 sf::FloatRect Clickable::getClickableArea(){
   sf::FloatRect rect;
   return  rect;
+}
+
+bool const Clickable::isLocal(){
+  return m_isLocalItem;
+}
+
+sf::Text Clickable::getLabel(){
+  return _label;
 }
 
 /*CLICKABLES - end **/
@@ -311,18 +319,37 @@ void EventManager::notifyAll(const sf::Event &event){
     {
         if (event.mouseButton.button == sf::Mouse::Left)
         {
-            std::cout << "the left button was pressed" << std::endl;
-            std::cout << "mouse x: " << event.mouseButton.x << std::endl;
-            std::cout << "mouse y: " << event.mouseButton.y << std::endl;
+            //std::cout << "the left button was pressed" << std::endl;
+            //std::cout << "mouse x: " << event.mouseButton.x << std::endl;
+            //std::cout << "mouse y: " << event.mouseButton.y << std::endl;
+            //std::cout << "Subscribers size : " << _clickSubscribers.size() << std::endl;
             // Using a for loop with iterator
+
             for(int i = 0; i < _clickSubscribers.size(); i++){
               Clickable *c = _clickSubscribers[i];
               sf::FloatRect carea = c->getClickableArea();
+              sf::Vector2f localMouse(event.mouseButton.x, event.mouseButton.y);
+              WindowManager *wm = WindowManager::getManager();
+              Camera camera = wm->camera;
+              sf::Vector2f cameraCenter = camera.getView().getCenter();
+              sf::Vector2f cameraTranslation(cameraCenter.x - DEFAULT_WIDTH / 2, cameraCenter.y - DEFAULT_HEIGHT / 2);
+              sf::Vector2f globalMouse = localMouse + cameraTranslation;
+              //std::cout << "Global mouse x: " << globalMouse.x << std::endl;
+              //std::cout << "Global mouse y: " << globalMouse.y << std::endl;
+              if(c->isLocal()){
+                if(carea.contains(sf::Vector2f(localMouse.x, localMouse.y))){
+                  std::cout << "clicking on item \n";
+                  c->onclick();
+                }
+              }else{
+                if(carea.contains(sf::Vector2f(globalMouse.x, globalMouse.y))){
+                  std::cout << "clicking on world item \n";
+                  c->onclick();
+                }
+              }
 
-              if(carea.contains(sf::Vector2f(event.mouseButton.x, event.mouseButton.y)))
-                c->onclick();
+
             }
-
         }
     }
 }
@@ -353,53 +380,102 @@ WindowManager * WindowManager::getManager(){
 void PDObject::draw(sf::RenderWindow *window){}
 void PDObject::update(float deltas){}
 void PDObject::onEvent(sf::Event event){}
+void PDObject::onAppEvent(AppEvent event){}
 void PDObject::onCollision(){}
 sf::Vector2f  PDObject::getPosition(){ return sf::Vector2f(0.0f, 0.0f);}
 
 bool WindowManager::init(){
   // initing the menu
-  m_gameState = GameState::Playing; // default will be set to Starting at one point
+  m_gameState = GameState::Starting; // the moment has come
 
   load_assets();
 
   eventMgr = new EventManager();
-  MenuContainer *menu = new MenuContainer();
-  MenuItem *file = new MenuItem("File", true);
-  menu->addMenuItem(file);
-  MenuItem *edit = new MenuItem("Edit", true);
-  menu->addMenuItem(edit);
-  MenuItem *view = new MenuItem("View", true);
-  menu->addMenuItem(view);
 
-  MenuDropdown *dropdown = new MenuDropdown(*file);
-  MenuItem *createFile = new MenuItem("New File");
-  dropdown->addMenuItem(createFile);
-  MenuItem *openFile = new MenuItem("Open File");
-  dropdown->addMenuItem(openFile);
+  // =================================================//
 
-  file->linkDropdown(dropdown);
+  // LOADING INITIAL MENU - START
 
-  _windowItems.push_back(menu);
-  //_windowItems.push_back(dropdown);
+  MenuItem *newGame = new MenuItem(NEW_GAME_LABEL, true);
+  m_startingMenu.addMenuItem(newGame);
+  MenuItem *gameLoad = new MenuItem(CONTINUE_LABEL, true);
+  m_startingMenu.addMenuItem(gameLoad);
+  MenuItem *quit = new MenuItem(QUIT_LABEL, true);
+  m_startingMenu.addMenuItem(quit);
 
-  for(auto item : menu->getClickables()){
+  for(auto item : m_startingMenu.getClickables()){
     eventMgr->registerItem(item);
   }
-  gameMap.load(TILE_SET, sf::Vector2u(16, 16));
-  gameMap.addLayer(LAYER_1, 50, 50);
-  gameMap.addLayer(LAYER_2, 50, 50);
 
-  //add player here
+  // LOADING INITIAL MENU - END
+
+  // =================================================//
+
+  // LOADING LEVEL INFO - -start //@TODO This will be moved to a dedicated procedure
+
   Player * link = new Player();
   link->animation.loadAsset(LINK_ASSET, link->sprite, 10, 8);
+  link->move(sf::Vector2f(250.0f, 300.0f));
+  link->m_zLayer = 1;
+  //link->move(sf::Vector2f(20.0f, 0.0f));
+  m_currentPlayer = link;
   addDrawable(link);
+
+  //gameMap.load(TILE_SET, sf::Vector2u(16, 16));
+  gameMap.loadLevel(1);
+  //gameMap.addLayer(LAYER_1, 50, 50);
+  //gameMap.addLayer(LAYER_2, 50, 50);
+
+  // @TODO - the following code needs to be inovked
+  // whenever the currentPlayer level changes
+  size_t playableLayer = m_currentPlayer-> m_zLayer;
+  if(gameMap.m_layerMap.find(playableLayer) != gameMap.m_layerMap.end()){
+    for(auto currentLevelLayer : gameMap.m_layerMap[playableLayer]){
+      for(auto item : currentLevelLayer->m_worldItems){
+          std::cout << "Registering world item \n";
+          eventMgr->registerItem(item);
+      }
+    }
+  }
+  // following commented code has been deprecated
+  /*MapLayer *currentLevelLayer = gameMap.m_layers[playableLayer];
+  for(auto item : currentLevelLayer->m_worldItems){
+      std::cout << "Registering world item \n";
+      eventMgr->registerItem(item);
+  }*/
 
   camera.initCamera(_window->getSize(), sf::FloatRect(0, 0, 2000.0f, 2000.0f));
   camera.setTarget(link);
 
+  // LOADING LEVEL INFO - -end
+
+  // =================================================//
+
+  // LOADING - ACTION MENU AND INVENTORY - start
+
+  ActionMenu menu;
+  MenuItem *push = new MenuItem("Push", true);
+  menu.addMenuItem(push);
+  MenuItem *pull = new MenuItem("Pull", true);
+  menu.addMenuItem(pull);
+  MenuItem *take = new MenuItem("Pick Up", true);
+  menu.addMenuItem(take);
+  MenuItem *use = new MenuItem("Use", true);
+  menu.addMenuItem(use);
+
+  m_actionMenu = menu;
+
+  for(auto item : menu.getClickables()){
+    eventMgr->registerItem(item);
+  }
+
+  // LOADING - ACTION MENU AND INVENTORY - end
+
   //m_musicMgr.loadTrack();
 
+  // LOADING MESSAGES ENGINE - start
   m_textContainer.init(&camera, DEFAULT_WIDTH, DEFAULT_HEIGHT * 0.2f);
+  // LOADING MESSAGES ENGINE - end
   return true;
 }
 
@@ -416,14 +492,22 @@ sf::RenderWindow* WindowManager::getWindow(){
 
 void WindowManager::manageEvents(){
   sf::Event event;
+
   while (getWindow()->pollEvent(event)){
+
       eventMgr->notifyAll(event);
       notifyObjects(event);
 
       if(m_gameState == GameState::OnDialog){
         m_textContainer.onSFEvent(event);
       }
-      if (event.type == sf::Event::Closed)
+      if(m_gameState == GameState::OnActionMenu){
+        m_actionMenu.onEvent(event);
+      }
+      if(m_gameState == GameState::Starting){
+        //
+      }
+      if (m_gameState == GameState::Exiting || event.type == sf::Event::Closed)
           getWindow()->close();
   }
   // managing custom app events
@@ -431,11 +515,20 @@ void WindowManager::manageEvents(){
   while(eventMgr->pollEvent(appEvent)){
     std::cout << "Printing event type "  << appEvent.type << "\n";
     if(appEvent.type == EventType::GameStateChange){
+      std::cout << "Changing the GameState to " << appEvent.targetState << "\n";
       m_gameState = appEvent.targetState;
     }
     if(appEvent.type == EventType::ShowMessage){
       m_gameState = GameState::OnDialog;
       m_textContainer.setDialog(appEvent.dialog);
+    }
+    // pick an item event
+    if(appEvent.type == EventType::PickUpItem){
+      if(appEvent.source != nullptr){
+        ItemSource *item = (ItemSource *) appEvent.source;
+        m_inventory.addItem(item);
+        std::cout << "Adding item to the player inventory \n";
+      }
     }
   }
 }
@@ -443,25 +536,55 @@ void WindowManager::manageEvents(){
 void WindowManager::draw(){
     _window->clear();
 
-    _window->setView(camera.view);
+    if(m_gameState == GameState::Starting){
+      m_startingMenu.draw(_window);
+    }else{
+      _window->setView(camera.view);
 
-    std::vector<MapLayer*> levelLayers = gameMap.m_layers;
-    if(levelLayers.size() > 0){
-      _window->draw(*levelLayers[0]);
-    }
-    for(int i = 0; i < _windowItems.size(); i ++){
-      _windowItems[i]->draw(_window);
-    }
-    for(int i = 0; i < _itemsToDisplay.size(); i ++){
-      _itemsToDisplay[i]->draw(_window);
-    }
-    if(levelLayers.size() > 1){
-      for(int i = 1; i < levelLayers.size(); i ++){
-        _window->draw(*levelLayers[i]);
+      size_t currentLayer = m_currentPlayer->m_zLayer;
+
+      for(size_t l = 0; l < currentLayer; l++){
+        if(gameMap.m_layerMap.find(l) != gameMap.m_layerMap.end()){
+          std::vector<MapLayer*> levelLayers = gameMap.m_layerMap[l];
+          for(auto layer : levelLayers){
+            _window->draw(*layer);
+          }
+        }
       }
-    }
-    if(m_gameState == GameState::OnDialog){
-      m_textContainer.draw(_window);
+      for(int i = 0; i < _itemsToDisplay.size(); i ++){
+        _itemsToDisplay[i]->draw(_window);
+      }
+      for(size_t l = currentLayer; l < gameMap.m_layerMap.size(); l++){
+        if(gameMap.m_layerMap.find(l) != gameMap.m_layerMap.end()){
+          std::vector<MapLayer*> levelLayers = gameMap.m_layerMap[l];
+          for(auto layer : levelLayers){
+            _window->draw(*layer);
+          }
+        }
+      }
+      // following commented code has been deprecated
+      /*std::vector<MapLayer*> levelLayers = gameMap.m_layers;
+      if(levelLayers.size() > 0){
+        _window->draw(*levelLayers[0]);
+      }
+      for(int i = 0; i < _itemsToDisplay.size(); i ++){
+        _itemsToDisplay[i]->draw(_window);
+      }
+      if(levelLayers.size() > 1){
+        for(int i = 1; i < levelLayers.size(); i ++){
+          _window->draw(*levelLayers[i]);
+        }
+      }*/
+      if(m_gameState == GameState::OnDialog){
+        m_textContainer.draw(_window);
+      }else if(m_gameState == GameState::OnActionMenu){
+        // draw menu
+        m_actionMenu.draw(_window);
+        m_inventory.draw(_window);
+        /*for(int i = 0; i < _windowItems.size(); i ++){
+          _windowItems[i]->draw(_window);
+        }*/
+      }
     }
     _window->display();
 }
@@ -472,24 +595,56 @@ void WindowManager::setScenery(Scenery * sc){
 void WindowManager::update(){
   float deltas = clock.getElapsedTime().asSeconds();
   clock.restart();
-  //m_musicMgr.play();
-  //std::cout << "Printing frame rate " << 1 / deltas << " \n";
-  for(int i = 0; i < _itemsToDisplay.size(); i ++){
-    _itemsToDisplay[i]->update(deltas);
+  if(m_gameState != GameState::Starting){
+    if(m_gameState == GameState::OnDialog || m_gameState == GameState::Playing){
+      for(int i = 0; i < _itemsToDisplay.size(); i ++){
+        _itemsToDisplay[i]->update(deltas);
+      }
+    }
+    camera.updateCamera(sf::FloatRect(0, 0, scenary->mapSize.x, scenary->mapSize.y));
+    m_actionMenu.setCamera(camera);
+
+    if(m_gameState == GameState::OnActionMenu){
+      m_inventory.setCamera(&camera);
+      m_actionMenu.update(deltas);
+      m_inventory.update();
+    }
+    if(m_gameState == GameState::OnDialog){
+      m_textContainer.update(deltas);
+    }
   }
 
-  camera.updateCamera(sf::FloatRect(0, 0, scenary->mapSize.x, scenary->mapSize.y));
-  if(m_gameState == GameState::OnDialog){
-    m_textContainer.update(deltas);
-  }
 }
 
 void WindowManager::checkCollisions(){
-  int currentLayer = 1; // this info needs to be calculated dynamically
-                        // based on player position
+
   for(int i = 0; i < _itemsToDisplay.size(); i ++){
     sf::FloatRect itemArea = _itemsToDisplay[i] -> getBounds();
-    MapLayer *currentLevelLayer = gameMap.m_layers[currentLayer];
+
+    if(gameMap.m_layerMap.find(_itemsToDisplay[i] -> m_zLayer) != gameMap.m_layerMap.end()){
+      for(auto currentLevelLayer : gameMap.m_layerMap[_itemsToDisplay[i] -> m_zLayer]){
+        for(auto item : currentLevelLayer->m_collidableItems){
+          if(itemArea.intersects(*item)){
+            _itemsToDisplay[i]->onCollision();
+          }
+        }
+        for(auto item  : currentLevelLayer-> m_eventAreas){
+          if(itemArea.intersects(*item.first)){
+            for(auto event : item.second){
+              //AppEvent *eventToFire = new AppEvent(event);
+              //eventToFire->fire();
+              eventMgr->fireEvent(event);
+              //eventToFire->type = EventType::ShowMessage;
+              //std::cout << "Registered event having type : " << event.type << "\n";
+            }
+          }else{
+            eventMgr->clearEvents(item.second);
+          }
+        }
+      }
+    }
+    // following commented code has been deprecated
+    /*MapLayer *currentLevelLayer = gameMap.m_layers[_itemsToDisplay[i] -> m_zLayer];
     for(auto item : currentLevelLayer->m_collidableItems){
       if(itemArea.intersects(*item)){
         _itemsToDisplay[i]->onCollision();
@@ -497,10 +652,9 @@ void WindowManager::checkCollisions(){
     }
     for(auto item  : currentLevelLayer-> m_eventAreas){
       if(itemArea.intersects(*item.first)){
-
         for(auto event : item.second){
-          /*AppEvent *eventToFire = new AppEvent(event);
-          eventToFire->fire();*/
+          //AppEvent *eventToFire = new AppEvent(event);
+          //eventToFire->fire();
           eventMgr->fireEvent(event);
           //eventToFire->type = EventType::ShowMessage;
           //std::cout << "Registered event having type : " << event.type << "\n";
@@ -508,7 +662,7 @@ void WindowManager::checkCollisions(){
       }else{
         eventMgr->clearEvents(item.second);
       }
-    }
+    }*/
   }
 }
 
@@ -555,7 +709,7 @@ void MenuContainer::draw(sf::RenderWindow * window){
   }
 }
 
-std::vector<MenuItem*> MenuContainer::getClickables(){
+std::vector<Clickable*> MenuContainer::getClickables(){
   return _menuItems;
 }
 // MenuDropdown
@@ -589,7 +743,7 @@ void MenuDropdown::draw(sf::RenderWindow * window){
   }
 }
 
-std::vector<MenuItem*> MenuDropdown::getClickables(){
+std::vector<Clickable*> MenuDropdown::getClickables(){
   return _menuItems;
 }
 // MENU ITEMS
@@ -607,6 +761,7 @@ MenuItem::MenuItem(const std::string menuText, bool isRoot){
 
 void MenuItem::setPosition(float x, float y){
   _label.setPosition(x, y);
+  m_clickableArea = _label.getGlobalBounds();
 }
 
 sf::Text MenuItem::getLabel(){
@@ -616,10 +771,37 @@ sf::Text MenuItem::getLabel(){
 void MenuItem::onclick(){
   std::cout << "You pressed on item " << this->_menuText << "\n";
   WindowManager * wm = WindowManager::getManager();
-  //std::cout << "Here we go again";
-  if(_isRoot){
-    //std::cout << "clearing the  displayed items";
-    wm->clearItems();
+  if( wm->m_gameState == GameState::OnActionMenu){
+    //making checks on the possible triggerable Events
+    std::cout << "available event number " << wm->m_actionMenu.m_loadedEvents.size() << "\n";
+    PActionType aType = PActionType::None;
+
+    if(this->_menuText == "Push"){
+      aType = PActionType::Push;
+    }else if(this->_menuText == "Pull"){
+      aType = PActionType::Pull;
+    }else if(this->_menuText == "Pick Up"){
+      aType = PActionType::PickUp;
+    }else if(this->_menuText == "Use"){
+      aType = PActionType::Use;
+    }
+    std::cout << "Priting selected aType " << aType << "\n";
+
+    for(auto lEvent : wm->m_actionMenu.m_loadedEvents){
+      std::cout << "Priting lEvent type" << lEvent.action.type << "\n";
+      if(lEvent.action.type == aType){
+        std::cout << "Firing event for " << this->_menuText << "\n";
+        wm->eventMgr->fireEvent(lEvent);
+      }
+    }
+  }else if(wm->m_gameState == GameState::Starting){
+    if(this->_menuText == NEW_GAME_LABEL)
+      EventManager::changeGameState(GameState::Playing);
+    else if(this->_menuText == CONTINUE_LABEL)
+      std::cout << "Continuing the game \n"; // @TODO
+    else if(this->_menuText == QUIT_LABEL)
+      EventManager::changeGameState(GameState::Exiting);
+
   }
 
   if(_atype == ActionType::show_menu){
@@ -642,7 +824,11 @@ void MenuItem::linkDropdown(void *md){
 }
 
 sf::FloatRect MenuItem::getClickableArea(){
-  return _label.getGlobalBounds();
+  sf::FloatRect globalBounds = m_clickableArea;
+  std::string labelText = _label.getString();
+
+  return m_clickableArea;
+  //return _label.getLocalBounds();
 }
 /*************** MENU MANAGER - end *******************/
 
@@ -663,6 +849,9 @@ int main(int argc, char const *argv[]) {
     music.openFromFile("./assets/music/bg_music.wav");
     music.play();
 
+    sf::Cursor cursor;
+    if (cursor.loadFromSystem(sf::Cursor::Hand))
+      wManager->getWindow()->setMouseCursor(cursor);
     //wManager->getWindow()->setFramerateLimit(60);
     while (wManager->getWindow()->isOpen())
     {
