@@ -5,4 +5,4 @@ The following functionalities have been implemented:
 
 - Input management, screen scrolling e player animation.
 - Levels are loaded from a tileset file, which can be created using [Tiled](https://www.mapeditor.org/).
-- A basic collision detection and a game state machine have been implemented.
+- A basic collision detection, a game state machine and a simple publisher-subscriber model to manage clicks event have been implemented.
